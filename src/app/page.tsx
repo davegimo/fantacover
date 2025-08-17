@@ -1,103 +1,438 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
+import { Leckerli_One } from 'next/font/google';
+
+// Configura il font Leckerli One
+const leckerliOne = Leckerli_One({
+  weight: '400',
+  subsets: ['latin'],
+});
+
+// Lista dei giocatori disponibili organizzati per ruolo
+const giocatoriPerRuolo = {
+  portieri: ['Svilar', 'Carnesecchi'],
+  difensori: ['Acerbi', 'Beukema', 'Abdulhamid', 'Adams'],
+  centrocampisti: ['Barella', 'Calhanoglu', 'Pellegrini', 'Bernabe', 'Bongiorno'],
+  attaccanti: ['Yldiz', 'Pulisic', 'Bonny', 'Beltran', 'Coincecao', 'Zambo', 'Alli']
+};
+
+// Posizioni predefinite per ogni ruolo nel canvas (ottimizzate per formato Instagram Stories 1080x1920)
+const posizioniRuoli = {
+  portieri: [
+    { x: 540, y: 300 },   // Portiere titolare centro
+    { x: 350, y: 400 },   // Portiere riserva sinistra
+    { x: 730, y: 400 }    // Portiere riserva destra
+  ],
+  difensori: [
+    { x: 180, y: 580 },   // Difensore sinistro
+    { x: 370, y: 550 },   // Difensore centrale sinistro
+    { x: 540, y: 530 },   // Difensore centrale
+    { x: 700, y: 560 },   // Difensore centrale destro
+    { x: 900, y: 580 },   // Difensore destro
+    { x: 280, y: 700 },   // Riserva 1
+    { x: 530, y: 710 },   // Riserva 2
+    { x: 800, y: 700 }    // Riserva 3
+  ],
+  centrocampisti: [
+    { x: 150, y: 830 },   // Centrocampista sinistro
+    { x: 360, y: 850 },   // Centrocampista centrale sinistro
+    { x: 540, y: 870 },   // Centrocampista centrale
+    { x: 720, y: 850 },   // Centrocampista centrale destro
+    { x: 930, y: 830 },   // Centrocampista destro
+    { x: 330, y: 1020 },   // Riserva 1
+    { x: 540, y: 1050 },   // Riserva 2
+    { x: 750, y: 1020 }    // Riserva 3
+  ],
+  attaccanti: [
+    { x: 170, y: 1200 },  // Attaccante sinistro
+    { x: 320, y: 1250 },  // Attaccante sx interno
+    { x: 910, y: 1200 },  // Attaccante dx 
+    { x: 770, y: 1250 },  // Attaccante destro interno
+    { x: 470, y: 1300 },  // Att centro sx
+    { x: 620, y: 1300 } // Att centro dx 2
+  ]
+};
+
+interface GiocatoreSelezionato {
+  nome: string;
+  ruolo: 'portieri' | 'difensori' | 'centrocampisti' | 'attaccanti';
+  x: number;
+  y: number;
+  id: string;
+}
+
+type Ruolo = 'portieri' | 'difensori' | 'centrocampisti' | 'attaccanti';
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [giocatoriSelezionati, setGiocatoriSelezionati] = useState<GiocatoreSelezionato[]>([]);
+  const [canvasScale, setCanvasScale] = useState(0.6);
+  const [modalAperto, setModalAperto] = useState(false);
+  const [ruoloSelezionato, setRuoloSelezionato] = useState<Ruolo | null>(null);
+  const [posizioneSelezionata, setPosizioneSelezionata] = useState<{x: number, y: number} | null>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  // Canvas al 60% responsive fino al 15% per schermi molto stretti
+  useEffect(() => {
+    const calculateScale = () => {
+      const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
+      
+      // Calcola lo spazio disponibile - più generoso per mobile
+      const availableHeight = windowHeight * 0.5; // 50% dell'altezza per il canvas
+      const availableWidth = windowWidth * 0.95;  // 95% della larghezza
+      
+      const scaleByWidth = availableWidth / 1080;
+      const scaleByHeight = availableHeight / 1920;
+      
+      // Calcola scala necessaria
+      const calculatedScale = Math.min(scaleByWidth, scaleByHeight);
+      
+      if (windowWidth >= 1200) {
+        // Schermo desktop: usa il 60% fisso
+        setCanvasScale(0.6);
+      } else if (windowWidth >= 768) {
+        // Schermo tablet: scala tra 60% e 40%
+        setCanvasScale(Math.max(calculatedScale, 0.4));
+      } else {
+        // Schermo mobile: scala tra 15% e 32% per adattarsi
+        setCanvasScale(Math.min(Math.max(calculatedScale, 0.15), 0.32));
+      }
+    };
+
+    calculateScale();
+    window.addEventListener('resize', calculateScale);
+    return () => window.removeEventListener('resize', calculateScale);
+  }, []);
+
+  const apriModal = (ruolo: Ruolo, posizione: {x: number, y: number}) => {
+    setRuoloSelezionato(ruolo);
+    setPosizioneSelezionata(posizione);
+    setModalAperto(true);
+  };
+
+  const aggiungiGiocatore = (nomeGiocatore: string) => {
+    if (!ruoloSelezionato || !posizioneSelezionata) return;
+
+    const nuovoGiocatore: GiocatoreSelezionato = {
+      nome: nomeGiocatore,
+      ruolo: ruoloSelezionato,
+      x: posizioneSelezionata.x,
+      y: posizioneSelezionata.y,
+      id: `${nomeGiocatore}-${Date.now()}`
+    };
+    setGiocatoriSelezionati(prev => [...prev, nuovoGiocatore]);
+    setModalAperto(false);
+    setRuoloSelezionato(null);
+    setPosizioneSelezionata(null);
+  };
+
+  const rimuoviGiocatore = (id: string) => {
+    setGiocatoriSelezionati(prev => prev.filter(g => g.id !== id));
+  };
+
+
+
+  const downloadImmagine = async () => {
+    try {
+      // Crea un canvas HTML nativo per Instagram Stories
+      const canvas = document.createElement('canvas');
+      canvas.width = 1080;
+      canvas.height = 1920;
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        alert('Errore nella creazione del canvas');
+        return;
+      }
+
+      // Carica e disegna l'immagine del campo
+      const fieldImage = document.createElement('img');
+      fieldImage.crossOrigin = 'anonymous';
+      
+      await new Promise<void>((resolve) => {
+        fieldImage.onload = () => {
+          // Disegna l'immagine del campo per riempire tutto il canvas
+          ctx.drawImage(fieldImage, 0, 0, 1080, 1920);
+          resolve();
+        };
+        
+        fieldImage.onerror = () => {
+          console.warn('Impossibile caricare field.jpg, uso sfondo verde');
+          // Fallback: sfondo verde se l'immagine non si carica
+          ctx.fillStyle = '#22c55e';
+          ctx.fillRect(0, 0, 1080, 1920);
+          resolve();
+        };
+        
+        fieldImage.src = '/field.jpg';
+      });
+
+      // Funzione per caricare e disegnare un'immagine
+      const loadAndDrawImage = (giocatore: GiocatoreSelezionato): Promise<void> => {
+        return new Promise((resolve) => {
+          const img = document.createElement('img');
+          img.crossOrigin = 'anonymous';
+          
+          img.onload = () => {
+            // Usa le stesse dimensioni e posizioni dell'editor
+            const x = giocatore.x - 200; // Centro dell'immagine a 400px
+            const y = giocatore.y - 200;
+            const size = 400; // Dimensione originale dell'editor
+            
+            // Calcola le dimensioni per mantenere l'aspect ratio
+            const imgWidth = img.naturalWidth;
+            const imgHeight = img.naturalHeight;
+            
+            // Calcola la scala per far entrare l'immagine nel cerchio
+            const scale = Math.max(size / imgWidth, size / imgHeight);
+            const scaledWidth = imgWidth * scale;
+            const scaledHeight = imgHeight * scale;
+            
+            // Centra l'immagine scalata
+            const imgX = x + (size - scaledWidth) / 2;
+            const imgY = y + (size - scaledHeight) / 2;
+            
+            // Salva il contesto
+            ctx.save();
+            
+            // Crea un percorso circolare per il clipping
+            ctx.beginPath();
+            ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI * 2);
+            ctx.clip();
+            
+            // Disegna l'immagine nel cerchio mantenendo le proporzioni
+            ctx.drawImage(img, imgX, imgY, scaledWidth, scaledHeight);
+            
+            // Ripristina il contesto
+            ctx.restore();
+            
+            resolve();
+          };
+          
+          img.onerror = () => {
+            console.warn(`Impossibile caricare: ${giocatore.nome}`);
+            // Disegna un cerchio colorato come fallback con le stesse dimensioni
+            const x = giocatore.x - 200;
+            const y = giocatore.y - 200;
+            const size = 400;
+            
+            const color = 
+              giocatore.ruolo === 'portieri' ? '#10b981' :
+              giocatore.ruolo === 'difensori' ? '#3b82f6' :
+              giocatore.ruolo === 'centrocampisti' ? '#f59e0b' : '#ef4444';
+            
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Aggiungi il nome con dimensioni proporzionate
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 48px Arial'; // Font più grande per leggibilità
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(giocatore.nome, x + size/2, y + size/2);
+            
+            resolve();
+          };
+          
+          // Imposta il src per iniziare il caricamento
+          img.src = `/giocatori/${giocatore.nome}.webp`;
+        });
+      };
+
+      // Ordina i giocatori per Z-index (come nell'editor): portieri < difensori < centrocampisti < attaccanti
+      const giocatoriOrdinati = [...giocatoriSelezionati].sort((a, b) => {
+        const zIndexA = 
+          a.ruolo === 'portieri' ? 10 :
+          a.ruolo === 'difensori' ? 20 :
+          a.ruolo === 'centrocampisti' ? 30 : 40; // attaccanti
+        
+        const zIndexB = 
+          b.ruolo === 'portieri' ? 10 :
+          b.ruolo === 'difensori' ? 20 :
+          b.ruolo === 'centrocampisti' ? 30 : 40; // attaccanti
+        
+        return zIndexA - zIndexB;
+      });
+
+      // Carica e disegna tutti i giocatori nell'ordine corretto dei layer
+      if (giocatoriOrdinati.length > 0) {
+        for (const giocatore of giocatoriOrdinati) {
+          await loadAndDrawImage(giocatore);
+        }
+      }
+
+      // Scarica l'immagine
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `fantacover-${Date.now()}.png`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        } else {
+          alert('Errore nella creazione dell\'immagine');
+        }
+      }, 'image/png');
+
+    } catch (error) {
+      console.error('Errore durante il download:', error);
+      alert('Errore durante il download dell\'immagine');
+    }
+  };
+
+  return (
+    <div className="min-h-screen p-4" style={{ background: 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)' }}>
+      <h1 className={`text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-center text-white mb-4 transform -rotate-2 ${leckerliOne.className}`} style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
+        Fantacover.it
+      </h1>
+      
+      {/* Canvas dell'immagine - Sempre centrato */}
+      <div className="flex flex-col items-center mb-8">
+        <div className="relative">
+          <div 
+            ref={canvasRef}
+            data-canvas-ref="true"
+            className="relative border-8 border-gray-300 rounded-lg mx-auto"
+            style={{
+              width: '1080px',
+              height: '1920px',
+              transform: `scale(${canvasScale})`,
+              transformOrigin: 'center top',
+              backgroundImage: 'url(/field.jpg)',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat'
+            }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+
+
+            {/* Posizioni disponibili e giocatori */}
+            {Object.entries(posizioniRuoli).map(([ruolo, posizioni]) =>
+              posizioni.map((pos, index) => {
+                const giocatoreInPosizione = giocatoriSelezionati.find(g =>
+                  Math.abs(g.x - pos.x) < 10 && Math.abs(g.y - pos.y) < 10
+                );
+
+                if (giocatoreInPosizione) {
+                  // Mostra il giocatore
+                  const zIndex = 
+                    giocatoreInPosizione.ruolo === 'attaccanti' ? 40 :
+                    giocatoreInPosizione.ruolo === 'centrocampisti' ? 30 :
+                    giocatoreInPosizione.ruolo === 'difensori' ? 20 : 10;
+
+                  return (
+                    <div
+                      key={giocatoreInPosizione.id}
+                      className="absolute cursor-pointer"
+                      style={{
+                        left: pos.x - 200,
+                        top: pos.y - 200,
+                        width: '400px',
+                        height: '400px',
+                        zIndex: zIndex
+                      }}
+                      onClick={() => rimuoviGiocatore(giocatoreInPosizione.id)}
+                    >
+                      <Image
+                        src={`/giocatori/${giocatoreInPosizione.nome}.webp`}
+                        alt={giocatoreInPosizione.nome}
+                        width={400}
+                        height={400}
+                        className="rounded-full object-cover w-full h-full"
+                      />
+                    </div>
+                  );
+                } else {
+                  // Mostra il cerchio +
+                  return (
+                    <div
+                      key={`${ruolo}-${index}`}
+                      className="absolute cursor-pointer flex items-center justify-center bg-white bg-opacity-80 border-4 border-gray-400 rounded-full hover:bg-opacity-100 transition-all"
+                      style={{
+                        left: pos.x - 30,
+                        top: pos.y - 30,
+                        width: '60px',
+                        height: '60px',
+                        zIndex: 50
+                      }}
+                      onClick={() => apriModal(ruolo as Ruolo, pos)}
+                    >
+                      <span className="text-gray-600 text-3xl font-bold">+</span>
+                    </div>
+                  );
+                }
+              })
+            )}
+
+          </div>
+          <p className="text-xs sm:text-sm text-gray-600 text-center mt-2">
+            Canvas al {Math.round(canvasScale * 100)}%
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+        
+        {/* Bottone Download */}
+        {giocatoriSelezionati.length > 0 && (
+          <button
+            onClick={downloadImmagine}
+            className="mt-4 px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Scarica Immagine
+          </button>
+        )}
+      </div>
+
+      {/* Modal per selezione giocatori */}
+      {modalAperto && ruoloSelezionato && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-96 overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold">
+                Seleziona {ruoloSelezionato.charAt(0).toUpperCase() + ruoloSelezionato.slice(1)}
+              </h3>
+              <button
+                onClick={() => setModalAperto(false)}
+                className="text-gray-500 hover:text-gray-700 text-xl"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 gap-2">
+              {giocatoriPerRuolo[ruoloSelezionato].map((giocatore) => (
+                <button
+                  key={giocatore}
+                  onClick={() => aggiungiGiocatore(giocatore)}
+                  className={`p-3 text-left rounded hover:bg-gray-50 border transition-colors ${
+                    ruoloSelezionato === 'portieri' ? 'border-green-300 hover:border-green-500' :
+                    ruoloSelezionato === 'difensori' ? 'border-blue-300 hover:border-blue-500' :
+                    ruoloSelezionato === 'centrocampisti' ? 'border-yellow-300 hover:border-yellow-500' :
+                    'border-red-300 hover:border-red-500'
+                  }`}
+                >
+                  {giocatore}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Contatore totale giocatori */}
+      <div className="text-center mt-4">
+        <span className="text-white text-lg font-semibold">
+          Giocatori selezionati: {giocatoriSelezionati.length}/25
+        </span>
+      </div>
     </div>
   );
 }

@@ -80,8 +80,8 @@ export default function Home() {
       const windowHeight = window.innerHeight;
       
       // Spazio disponibile considerando header e contatori
-      const headerSpace = 120; // Spazio per titolo e padding
-      const footerSpace = 60;  // Spazio per contatore giocatori
+      const headerSpace = 80; // Spazio ridotto per titolo e padding
+      const footerSpace = 40; // Spazio ridotto per contatore giocatori
       const availableHeight = windowHeight - headerSpace - footerSpace;
       const availableWidth = windowWidth * 0.95; // 95% della larghezza
       
@@ -292,13 +292,20 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen p-4" style={{ background: 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)' }}>
-      <h1 className={`text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-center text-white mb-4 transform -rotate-2 ${leckerliOne.className}`} style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
+    <div className="p-2" style={{ background: 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)' }}>
+      <h1 className={`text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-center text-white mb-2 transform -rotate-2 ${leckerliOne.className}`} style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
         Fantacover.it
       </h1>
+
+      {/* Contatore totale giocatori */}
+      <div className="text-center mb-2">
+        <span className="text-white text-lg font-semibold">
+          Giocatori selezionati: {giocatoriSelezionati.length}/25
+        </span>
+      </div>
       
       {/* Canvas dell'immagine - Sempre centrato */}
-      <div className="flex flex-col items-center mb-8">
+      <div className="flex flex-col items-center mb-1">
         <div className="relative">
           <div 
             ref={canvasRef}
@@ -376,16 +383,14 @@ export default function Home() {
             )}
 
           </div>
-          <p className="text-xs sm:text-sm text-gray-600 text-center mt-2">
-            Canvas al {Math.round(canvasScale * 100)}%
-          </p>
+
         </div>
         
         {/* Bottone Download */}
         {giocatoriSelezionati.length > 0 && (
           <button
             onClick={downloadImmagine}
-            className="mt-4 px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg flex items-center gap-2"
+            className="mt-1 px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg flex items-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -431,12 +436,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Contatore totale giocatori */}
-      <div className="text-center mt-4">
-        <span className="text-white text-lg font-semibold">
-          Giocatori selezionati: {giocatoriSelezionati.length}/25
-        </span>
-      </div>
+
     </div>
   );
 }

@@ -292,7 +292,7 @@ export default function Home() {
   };
 
   return (
-    <div className="p-2" style={{ background: 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)' }}>
+    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)' }}>
       <h1 className={`text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-center text-white mb-2 transform -rotate-2 ${leckerliOne.className}`} style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
         Fantacover.it
       </h1>
@@ -303,101 +303,95 @@ export default function Home() {
           Giocatori selezionati: {giocatoriSelezionati.length}/25
         </span>
       </div>
-      
-      {/* Canvas dell'immagine - Sempre centrato */}
-      <div className="flex flex-col items-center mb-1">
-        <div className="relative">
-          <div 
-            ref={canvasRef}
-            data-canvas-ref="true"
-            className="relative border-8 border-gray-300 rounded-lg mx-auto"
-            style={{
-              width: '1080px',
-              height: '1920px',
-              transform: `scale(${canvasScale})`,
-              transformOrigin: 'center top',
-              backgroundImage: 'url(/field.jpg)',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat'
-            }}
-          >
 
-
-            {/* Posizioni disponibili e giocatori */}
-            {Object.entries(posizioniRuoli).map(([ruolo, posizioni]) =>
-              posizioni.map((pos, index) => {
-                const giocatoreInPosizione = giocatoriSelezionati.find(g =>
-                  Math.abs(g.x - pos.x) < 10 && Math.abs(g.y - pos.y) < 10
-                );
-
-                if (giocatoreInPosizione) {
-                  // Mostra il giocatore
-                  const zIndex = 
-                    giocatoreInPosizione.ruolo === 'attaccanti' ? 40 :
-                    giocatoreInPosizione.ruolo === 'centrocampisti' ? 30 :
-                    giocatoreInPosizione.ruolo === 'difensori' ? 20 : 10;
-
-                  return (
-                    <div
-                      key={giocatoreInPosizione.id}
-                      className="absolute cursor-pointer"
-                      style={{
-                        left: pos.x - 200,
-                        top: pos.y - 200,
-                        width: '400px',
-                        height: '400px',
-                        zIndex: zIndex
-                      }}
-                      onClick={() => rimuoviGiocatore(giocatoreInPosizione.id)}
-                    >
-                      <Image
-                        src={`/giocatori/${giocatoreInPosizione.nome}.webp`}
-                        alt={giocatoreInPosizione.nome}
-                        width={400}
-                        height={400}
-                        className="rounded-full object-cover w-full h-full"
-                      />
-                    </div>
-                  );
-                } else {
-                  // Mostra il cerchio +
-                  return (
-                    <div
-                      key={`${ruolo}-${index}`}
-                      className="absolute cursor-pointer flex items-center justify-center bg-white bg-opacity-80 border-4 border-gray-400 rounded-full hover:bg-opacity-100 transition-all"
-                      style={{
-                        left: pos.x - 30,
-                        top: pos.y - 30,
-                        width: '60px',
-                        height: '60px',
-                        zIndex: 50
-                      }}
-                      onClick={() => apriModal(ruolo as Ruolo, pos)}
-                    >
-                      <span className="text-gray-600 text-3xl font-bold">+</span>
-                    </div>
-                  );
-                }
-              })
-            )}
-
-          </div>
-
-        </div>
-        
-        {/* Bottone Download */}
-        {giocatoriSelezionati.length > 0 && (
+      {/* Bottone Download */}
+      {giocatoriSelezionati.length > 0 && (
+        <div className="flex justify-center mb-2">
           <button
             onClick={downloadImmagine}
-            className="mt-1 px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg flex items-center gap-2"
+            className="px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg flex items-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             Scarica Immagine
           </button>
-        )}
+        </div>
+      )}
+      
+      {/* Canvas dell'immagine - Sempre centrato */}
+      <div className="flex justify-center">
+        <div 
+          ref={canvasRef}
+          data-canvas-ref="true"
+          className="relative border-8 border-gray-300 rounded-lg"
+          style={{
+            width: `${1080 * canvasScale}px`,
+            height: `${1920 * canvasScale}px`,
+            backgroundImage: 'url(/field.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat'
+          }}
+        >
+          {/* Posizioni disponibili e giocatori */}
+          {Object.entries(posizioniRuoli).map(([ruolo, posizioni]) =>
+            posizioni.map((pos, index) => {
+              const giocatoreInPosizione = giocatoriSelezionati.find(g =>
+                Math.abs(g.x - pos.x) < 10 && Math.abs(g.y - pos.y) < 10
+              );
+
+              if (giocatoreInPosizione) {
+                // Mostra il giocatore
+                const zIndex = 
+                  giocatoreInPosizione.ruolo === 'attaccanti' ? 40 :
+                  giocatoreInPosizione.ruolo === 'centrocampisti' ? 30 :
+                  giocatoreInPosizione.ruolo === 'difensori' ? 20 : 10;
+
+                return (
+                  <div
+                    key={giocatoreInPosizione.id}
+                    className="absolute cursor-pointer"
+                    style={{
+                      left: (pos.x - 200) * canvasScale,
+                      top: (pos.y - 200) * canvasScale,
+                      width: `${400 * canvasScale}px`,
+                      height: `${400 * canvasScale}px`,
+                      zIndex: zIndex
+                    }}
+                    onClick={() => rimuoviGiocatore(giocatoreInPosizione.id)}
+                  >
+                    <Image
+                      src={`/giocatori/${giocatoreInPosizione.nome}.webp`}
+                      alt={giocatoreInPosizione.nome}
+                      width={400 * canvasScale}
+                      height={400 * canvasScale}
+                      className="rounded-full object-cover w-full h-full"
+                    />
+                  </div>
+                );
+              } else {
+                // Mostra il cerchio +
+                return (
+                  <div
+                    key={`${ruolo}-${index}`}
+                    className="absolute cursor-pointer flex items-center justify-center bg-white bg-opacity-80 border-4 border-gray-400 rounded-full hover:bg-opacity-100 transition-all"
+                    style={{
+                      left: (pos.x - 30) * canvasScale,
+                      top: (pos.y - 30) * canvasScale,
+                      width: `${60 * canvasScale}px`,
+                      height: `${60 * canvasScale}px`,
+                      zIndex: 50
+                    }}
+                    onClick={() => apriModal(ruolo as Ruolo, pos)}
+                  >
+                    <span className="text-gray-600 text-3xl font-bold" style={{ fontSize: `${24 * canvasScale}px` }}>+</span>
+                  </div>
+                );
+              }
+            })
+          )}
+        </div>
       </div>
 
       {/* Modal per selezione giocatori */}

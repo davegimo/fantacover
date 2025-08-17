@@ -73,31 +73,35 @@ export default function Home() {
   const [posizioneSelezionata, setPosizioneSelezionata] = useState<{x: number, y: number} | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
-  // Canvas al 60% responsive fino al 15% per schermi molto stretti
+  // Canvas responsive basato su larghezza E altezza del browser
   useEffect(() => {
     const calculateScale = () => {
       const windowWidth = window.innerWidth;
       const windowHeight = window.innerHeight;
       
-      // Calcola lo spazio disponibile - più generoso per mobile
-      const availableHeight = windowHeight * 0.5; // 50% dell'altezza per il canvas
-      const availableWidth = windowWidth * 0.95;  // 95% della larghezza
+      // Spazio disponibile considerando header e contatori
+      const headerSpace = 120; // Spazio per titolo e padding
+      const footerSpace = 60;  // Spazio per contatore giocatori
+      const availableHeight = windowHeight - headerSpace - footerSpace;
+      const availableWidth = windowWidth * 0.95; // 95% della larghezza
       
+      // Calcola le scale necessarie per entrambe le dimensioni
       const scaleByWidth = availableWidth / 1080;
       const scaleByHeight = availableHeight / 1920;
       
-      // Calcola scala necessaria
+      // Usa la scala più restrittiva tra larghezza e altezza
       const calculatedScale = Math.min(scaleByWidth, scaleByHeight);
       
-      if (windowWidth >= 1200) {
-        // Schermo desktop: usa il 60% fisso
-        setCanvasScale(0.6);
+      // Applica limiti basati sul tipo di schermo
+      if (windowWidth >= 1200 && windowHeight >= 900) {
+        // Desktop grande: fino al 60% ma rispetta i limiti di spazio
+        setCanvasScale(Math.min(calculatedScale, 0.6));
       } else if (windowWidth >= 768) {
-        // Schermo tablet: scala tra 60% e 40%
-        setCanvasScale(Math.max(calculatedScale, 0.4));
+        // Tablet o desktop piccolo: scala tra 20% e 50%
+        setCanvasScale(Math.min(Math.max(calculatedScale, 0.2), 0.5));
       } else {
-        // Schermo mobile: scala tra 15% e 32% per adattarsi
-        setCanvasScale(Math.min(Math.max(calculatedScale, 0.15), 0.32));
+        // Mobile: scala tra 15% e 35%
+        setCanvasScale(Math.min(Math.max(calculatedScale, 0.15), 0.35));
       }
     };
 

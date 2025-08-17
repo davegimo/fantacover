@@ -393,15 +393,15 @@ export default function Home() {
 
       {/* Modal per selezione giocatori */}
       {modalAperto && ruoloSelezionato && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full max-h-96 overflow-y-auto">
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-900 border border-gray-600 rounded-lg p-6 max-w-md w-full max-h-96 overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-bold">
+              <h3 className="text-lg font-bold text-white">
                 Seleziona {ruoloSelezionato.charAt(0).toUpperCase() + ruoloSelezionato.slice(1)}
               </h3>
               <button
                 onClick={() => setModalAperto(false)}
-                className="text-gray-500 hover:text-gray-700 text-xl"
+                className="text-gray-300 hover:text-white text-xl"
               >
                 ✕
               </button>
@@ -412,11 +412,11 @@ export default function Home() {
                 <button
                   key={giocatore}
                   onClick={() => aggiungiGiocatore(giocatore)}
-                  className={`p-3 text-left rounded hover:bg-gray-50 border transition-colors ${
-                    ruoloSelezionato === 'portieri' ? 'border-green-300 hover:border-green-500' :
-                    ruoloSelezionato === 'difensori' ? 'border-blue-300 hover:border-blue-500' :
-                    ruoloSelezionato === 'centrocampisti' ? 'border-yellow-300 hover:border-yellow-500' :
-                    'border-red-300 hover:border-red-500'
+                  className={`p-3 text-left rounded hover:bg-gray-800 border transition-colors text-white ${
+                    ruoloSelezionato === 'portieri' ? 'border-green-500 hover:border-green-400' :
+                    ruoloSelezionato === 'difensori' ? 'border-blue-500 hover:border-blue-400' :
+                    ruoloSelezionato === 'centrocampisti' ? 'border-yellow-500 hover:border-yellow-400' :
+                    'border-red-500 hover:border-red-400'
                   }`}
                 >
                   {giocatore}

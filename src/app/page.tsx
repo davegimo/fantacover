@@ -73,6 +73,7 @@ export default function Home() {
   const [nomeSquadra, setNomeSquadra] = useState('');
   const [dimensioneFontSquadra, setDimensioneFontSquadra] = useState(85);
   const [isMobile, setIsMobile] = useState(false);
+  const [giocatorePreDelete, setGiocatorePreDelete] = useState<string | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   // Lista delle squadre disponibili
@@ -117,6 +118,20 @@ export default function Home() {
     { nome: 'Pesca', colore: '#fed7aa' },
     { nome: 'Nero', colore: '#000000' }
   ];
+
+  // Previeni scroll del body quando il modal è aperto
+  useEffect(() => {
+    if (modalAperto) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup quando il componente viene smontato
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [modalAperto]);
 
   // Canvas responsive basato su larghezza E altezza del browser
   useEffect(() => {
@@ -245,6 +260,7 @@ export default function Home() {
     setSquadraSelezionata(null);
     setGiocatoriSquadra([]);
     setModalAperto(true);
+    setGiocatorePreDelete(null);
   };
 
   const selezionaSquadra = async (squadra: string) => {
@@ -284,10 +300,21 @@ export default function Home() {
     setPosizioneSelezionata(null);
     setSquadraSelezionata(null);
     setGiocatoriSquadra([]);
+    setGiocatorePreDelete(null);
   };
 
   const rimuoviGiocatore = (id: string) => {
     setGiocatoriSelezionati(prev => prev.filter(g => g.id !== id));
+    setGiocatorePreDelete(null);
+  };
+
+  const attivaPreDelete = (id: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setGiocatorePreDelete(id);
+  };
+
+  const annullaPreDelete = () => {
+    setGiocatorePreDelete(null);
   };
 
 
@@ -686,6 +713,7 @@ export default function Home() {
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat'
           }}
+          onClick={annullaPreDelete}
         >
           {/* Nome della squadra */}
           {nomeSquadra && (
@@ -738,6 +766,8 @@ export default function Home() {
                 // Aggiungi l'indice della posizione per l'ordinamento fine
                 const zIndex = ruoloBase + index;
 
+                const isPreDelete = giocatorePreDelete === giocatoreInPosizione.id;
+                
                 return (
                   <div
                     key={giocatoreInPosizione.id}
@@ -747,18 +777,41 @@ export default function Home() {
                       top: (pos.y - 200) * canvasScale,
                       width: `${400 * canvasScale}px`,
                       height: `${400 * canvasScale}px`,
-                      zIndex: zIndex
+                      zIndex: isPreDelete ? 1000 : zIndex
                     }}
-                    onClick={() => rimuoviGiocatore(giocatoreInPosizione.id)}
+                    onClick={(e) => attivaPreDelete(giocatoreInPosizione.id, e)}
                   >
-                    <PlayerImage
-                      squadra={giocatoreInPosizione.squadra}
-                      nome={giocatoreInPosizione.nome}
-                      alt={giocatoreInPosizione.nome}
-                      width={400 * canvasScale}
-                      height={400 * canvasScale}
-                      className="rounded-full object-cover w-full h-full"
-                    />
+                    <div className="relative w-full h-full">
+                      <PlayerImage
+                        squadra={giocatoreInPosizione.squadra}
+                        nome={giocatoreInPosizione.nome}
+                        alt={giocatoreInPosizione.nome}
+                        width={400 * canvasScale}
+                        height={400 * canvasScale}
+                        className={`rounded-full object-cover w-full h-full transition-all duration-200 ${
+                          isPreDelete ? 'border-8 border-white' : ''
+                        }`}
+                      />
+                      
+                      {/* Pulsante di eliminazione */}
+                      {isPreDelete && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            rimuoviGiocatore(giocatoreInPosizione.id);
+                          }}
+                          className="absolute top-0 right-0 bg-red-600 hover:bg-red-700 text-white rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold transition-colors duration-200 shadow-lg"
+                          style={{
+                            transform: 'translate(25%, -25%)',
+                            fontSize: `${20 * canvasScale}px`,
+                            width: `${48 * canvasScale}px`,
+                            height: `${48 * canvasScale}px`
+                          }}
+                        >
+                          ×
+                        </button>
+                      )}
+                    </div>
                   </div>
                 );
               } else {
@@ -774,7 +827,11 @@ export default function Home() {
                       height: `${90 * canvasScale}px`,
                       zIndex: 50
                     }}
-                    onClick={() => apriModal(ruolo as Ruolo, pos)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      annullaPreDelete();
+                      apriModal(ruolo as Ruolo, pos);
+                    }}
                   >
                     <span className="text-gray-600 text-4xl font-bold" style={{ fontSize: `${36 * canvasScale}px` }}>+</span>
                   </div>
@@ -787,8 +844,19 @@ export default function Home() {
 
       {/* Modal per selezione giocatori */}
       {modalAperto && ruoloSelezionato && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-          <div className="bg-gray-900 border border-gray-600 rounded-lg p-6 max-w-md w-full max-h-96 overflow-y-auto">
+        <div 
+          className="fixed inset-0 flex items-center justify-center z-50 p-4"
+          onClick={() => {
+            setModalAperto(false);
+            setSquadraSelezionata(null);
+            setGiocatoriSquadra([]);
+            setGiocatorePreDelete(null);
+          }}
+        >
+          <div 
+            className="bg-gray-900 border border-gray-600 rounded-lg p-6 max-w-md w-full max-h-96 overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold text-white">
                 {!squadraSelezionata ? 'Seleziona Squadra' : `Seleziona ${ruoloSelezionato.charAt(0).toUpperCase() + ruoloSelezionato.slice(1)} - ${squadraSelezionata}`}
@@ -798,6 +866,7 @@ export default function Home() {
                   setModalAperto(false);
                   setSquadraSelezionata(null);
                   setGiocatoriSquadra([]);
+                  setGiocatorePreDelete(null);
                 }}
                 className="text-gray-300 hover:text-white text-xl"
               >

@@ -211,6 +211,26 @@ export default function Home() {
         });
       }
 
+      // Disegna la scritta fantacover.it in basso a destra
+      ctx.fillStyle = 'white';
+      ctx.font = `bold 60px "Leckerli One", cursive`;
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'bottom';
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 4;
+      
+      // Salva il contesto per la rotazione
+      ctx.save();
+      ctx.translate(1060, 1890); // Posizione in basso a destra
+      ctx.rotate(-2 * Math.PI / 180); // Rotazione di -2 gradi
+      
+      // Disegna il contorno e il testo
+      ctx.strokeText('Fantacover.it', 0, 0);
+      ctx.fillText('Fantacover.it', 0, 0);
+      
+      // Ripristina il contesto
+      ctx.restore();
+
       // Funzione per caricare e disegnare un'immagine
       const loadAndDrawImage = (giocatore: GiocatoreSelezionato): Promise<void> => {
         return new Promise((resolve) => {
@@ -474,6 +494,20 @@ export default function Home() {
               {nomeSquadra}
             </div>
           )}
+
+          {/* Scritta fantacover.it in basso a destra */}
+          <div
+            className={`absolute text-white font-bold transform -rotate-2 ${leckerliOne.className}`}
+            style={{
+              right: `${20 * canvasScale}px`,
+              bottom: `${30 * canvasScale}px`,
+              fontSize: `${60 * canvasScale}px`,
+              textShadow: '3px 3px 6px rgba(0,0,0,0.8)',
+              zIndex: 70
+            }}
+          >
+            Fantacover.it
+          </div>
 
           {/* Posizioni disponibili e giocatori */}
           {Object.entries(posizioniRuoli).map(([ruolo, posizioni]) =>

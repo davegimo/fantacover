@@ -35,10 +35,10 @@ const posizioniRuoli = {
     
     { x: 930, y: 1030 },   // Centrocampista destro
     { x: 720, y: 1050 },   // Centrocampista centrale destro
-    { x: 540, y: 1070 },   // Centrocampista centrale
-    { x: 330, y: 1220 },   // Riserva 1
-    { x: 540, y: 1250 },   // Riserva 2
-    { x: 750, y: 1220 }    // Riserva 3
+    { x: 540, y: 1120 },   // Centrocampista centrale
+    { x: 330, y: 1270 },   // Riserva 1
+    { x: 540, y: 1300 },   // Riserva 2
+    { x: 750, y: 1270 }    // Riserva 3
   ],
   attaccanti: [
     { x: 170, y: 1400 },  // Attaccante sinistro
@@ -420,9 +420,9 @@ export default function Home() {
             const scaledWidth = imgWidth * scale;
             const scaledHeight = imgHeight * scale;
             
-            // Centra l'immagine scalata
+            // Posiziona l'immagine: centrata orizzontalmente, allineata in alto verticalmente
             const imgX = x + (size - scaledWidth) / 2;
-            const imgY = y + (size - scaledHeight) / 2;
+            const imgY = y; // Allinea in alto invece di centrare
             
             // Salva il contesto per il clipping
             ctx.save();
@@ -815,7 +815,7 @@ export default function Home() {
                         alt={giocatoreInPosizione.nome}
                         width={400 * canvasScale}
                         height={400 * canvasScale}
-                        className="object-cover w-full h-full transition-all duration-200"
+                        className="object-cover object-top w-full h-full transition-all duration-200"
                       />
                     </div>
                     

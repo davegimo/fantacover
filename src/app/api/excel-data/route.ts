@@ -44,7 +44,7 @@ export async function GET() {
         if (ruolo && cognome && squadra) {
           giocatori.push({
             ruolo: ruolo.toString().trim(),
-            cognome: cognome.toString().trim(),
+            cognome: cognome.toString().trim().replace(/\./g, ''), // Rimuovi tutti i punti dal cognome
             squadra: squadra.toString().trim()
           });
         }

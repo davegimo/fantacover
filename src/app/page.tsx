@@ -407,14 +407,15 @@ export default function Home() {
             // Usa le stesse dimensioni e posizioni dell'editor
             const x = giocatore.x - 200; // Centro dell'immagine a 400px
             const y = giocatore.y - 200;
-            const size = 400; // Dimensione originale dell'editor
+            const size = 400; // Dimensione target per tutti i giocatori
             
             // Calcola le dimensioni per mantenere l'aspect ratio
             const imgWidth = img.naturalWidth;
             const imgHeight = img.naturalHeight;
             
-            // Calcola la scala per far entrare l'immagine nel cerchio
-            const scale = Math.max(size / imgWidth, size / imgHeight);
+            // Calcola la scala per far entrare l'immagine intera nella dimensione target
+            // Usa Math.min invece di Math.max per mostrare l'immagine completa
+            const scale = Math.min(size / imgWidth, size / imgHeight);
             const scaledWidth = imgWidth * scale;
             const scaledHeight = imgHeight * scale;
             
@@ -422,26 +423,15 @@ export default function Home() {
             const imgX = x + (size - scaledWidth) / 2;
             const imgY = y + (size - scaledHeight) / 2;
             
-            // Salva il contesto
-            ctx.save();
-            
-            // Crea un percorso circolare per il clipping
-            ctx.beginPath();
-            ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI * 2);
-            ctx.clip();
-            
-            // Disegna l'immagine nel cerchio mantenendo le proporzioni
+            // Disegna l'immagine completa scalata (senza clipping circolare)
             ctx.drawImage(img, imgX, imgY, scaledWidth, scaledHeight);
-            
-            // Ripristina il contesto
-            ctx.restore();
             
             resolve();
           };
           
           img.onerror = () => {
             console.warn(`Impossibile caricare: ${giocatore.nome}`);
-            // Disegna un cerchio colorato come fallback con le stesse dimensioni
+            // Disegna un rettangolo colorato come fallback con le stesse dimensioni
             const x = giocatore.x - 200;
             const y = giocatore.y - 200;
             const size = 400;
@@ -451,9 +441,10 @@ export default function Home() {
               giocatore.ruolo === 'difensori' ? '#3b82f6' :
               giocatore.ruolo === 'centrocampisti' ? '#f59e0b' : '#ef4444';
             
+            // Disegna un rettangolo colorato con angoli arrotondati
             ctx.fillStyle = color;
             ctx.beginPath();
-            ctx.arc(x + size/2, y + size/2, size/2, 0, Math.PI * 2);
+            ctx.roundRect(x, y, size, size, 20); // Angoli arrotondati di 20px
             ctx.fill();
             
             // Aggiungi il nome con dimensioni proporzionate
@@ -788,7 +779,7 @@ export default function Home() {
                         alt={giocatoreInPosizione.nome}
                         width={400 * canvasScale}
                         height={400 * canvasScale}
-                        className={`rounded-full object-cover w-full h-full transition-all duration-200 ${
+                        className={`rounded-lg object-contain w-full h-full transition-all duration-200 ${
                           isPreDelete ? 'border-8 border-white' : ''
                         }`}
                       />

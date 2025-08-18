@@ -11,6 +11,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Parametri mancanti' }, { status: 400 });
   }
 
+  // Rimuovi tutti i punti dal cognome per il matching con i file
+  const cognomePulito = cognome.replace(/\./g, '');
+
   try {
     const giocatoriPath = path.join(process.cwd(), 'public', 'giocatori2', squadra);
     
@@ -25,13 +28,13 @@ export async function GET(request: NextRequest) {
     const extensions = ['.webp', '.png', '.jpg', '.jpeg'];
     
     for (const ext of extensions) {
-      const imagePath = path.join(giocatoriPath, `${cognome}${ext}`);
+      const imagePath = path.join(giocatoriPath, `${cognomePulito}${ext}`);
       try {
         await fs.access(imagePath);
         // Se il file esiste, restituisci il percorso relativo
         return NextResponse.json({ 
           exists: true, 
-          imagePath: `/giocatori2/${squadra}/${cognome}${ext}` 
+          imagePath: `/giocatori2/${squadra}/${cognomePulito}${ext}` 
         });
       } catch {
         // Continua con la prossima estensione

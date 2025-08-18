@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
     
     // Filtra i file .webp e .png e rimuovi l'estensione
     const giocatori = files
-      .filter(file => file.endsWith('.webp') || file.endsWith('.png'))
-      .map(file => file.replace(/\.(webp|png)$/, ''))
+      .filter(file => file.endsWith('.webp') || file.endsWith('.png') || file.endsWith('.jpg') || file.endsWith('.jpeg'))
+      .map(file => file.replace(/\.(webp|png|jpg|jpeg)$/, ''))
       .filter((nome, index, array) => array.indexOf(nome) === index); // Rimuovi duplicati
 
     return NextResponse.json(giocatori);

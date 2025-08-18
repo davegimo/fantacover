@@ -211,13 +211,14 @@ export default function Home() {
   };
 
   // Componente per gestire il caricamento delle immagini con fallback
-  const PlayerImage = ({ squadra, nome, width, height, className, alt }: {
+  const PlayerImage = ({ squadra, nome, width, height, className, alt, style }: {
     squadra: string;
     nome: string;
     width: number;
     height: number;
     className?: string;
     alt: string;
+    style?: React.CSSProperties;
   }) => {
     const [currentSrc, setCurrentSrc] = useState<string>(`/giocatori2/${squadra}/${nome}.webp`);
     const [hasError, setHasError] = useState(false);
@@ -248,6 +249,7 @@ export default function Home() {
         width={width}
         height={height}
         className={className}
+        style={style}
         onError={handleError}
         onLoad={handleLoad}
       />
@@ -413,9 +415,8 @@ export default function Home() {
             const imgWidth = img.naturalWidth;
             const imgHeight = img.naturalHeight;
             
-            // Calcola la scala per far entrare l'immagine intera nella dimensione target
-            // Usa Math.min invece di Math.max per mostrare l'immagine completa
-            const scale = Math.min(size / imgWidth, size / imgHeight);
+            // Scala tutti i giocatori alla stessa dimensione (riempie l'area)
+            const scale = Math.max(size / imgWidth, size / imgHeight);
             const scaledWidth = imgWidth * scale;
             const scaledHeight = imgHeight * scale;
             
@@ -423,15 +424,36 @@ export default function Home() {
             const imgX = x + (size - scaledWidth) / 2;
             const imgY = y + (size - scaledHeight) / 2;
             
-            // Disegna l'immagine completa scalata (senza clipping circolare)
+            // Salva il contesto per il clipping
+            ctx.save();
+            
+            // Crea un percorso per il clipping: rettangolo sopra + semicerchio sotto
+            ctx.beginPath();
+            const centerX = x + size / 2;
+            const centerY = y + size / 2;
+            const radius = size / 2;
+            
+            // Disegna la parte superiore (rettangolo)
+            ctx.rect(x, y, size, size / 2);
+            
+            // Disegna la parte inferiore (semicerchio)
+            ctx.arc(centerX, centerY, radius, 0, Math.PI); // Solo la metà inferiore del cerchio
+            
+            // Applica il clipping
+            ctx.clip();
+            
+            // Disegna l'immagine con il clipping applicato
             ctx.drawImage(img, imgX, imgY, scaledWidth, scaledHeight);
+            
+            // Ripristina il contesto
+            ctx.restore();
             
             resolve();
           };
           
           img.onerror = () => {
             console.warn(`Impossibile caricare: ${giocatore.nome}`);
-            // Disegna un rettangolo colorato come fallback con le stesse dimensioni
+            // Disegna una forma colorata come fallback (rettangolo sopra + semicerchio sotto)
             const x = giocatore.x - 200;
             const y = giocatore.y - 200;
             const size = 400;
@@ -441,10 +463,19 @@ export default function Home() {
               giocatore.ruolo === 'difensori' ? '#3b82f6' :
               giocatore.ruolo === 'centrocampisti' ? '#f59e0b' : '#ef4444';
             
-            // Disegna un rettangolo colorato con angoli arrotondati
+            // Disegna la stessa forma del clipping: rettangolo sopra + semicerchio sotto
             ctx.fillStyle = color;
             ctx.beginPath();
-            ctx.roundRect(x, y, size, size, 20); // Angoli arrotondati di 20px
+            const centerX = x + size / 2;
+            const centerY = y + size / 2;
+            const radius = size / 2;
+            
+            // Disegna la parte superiore (rettangolo)
+            ctx.rect(x, y, size, size / 2);
+            
+            // Disegna la parte inferiore (semicerchio)
+            ctx.arc(centerX, centerY, radius, 0, Math.PI);
+            
             ctx.fill();
             
             // Aggiungi il nome con dimensioni proporzionate
@@ -772,37 +803,58 @@ export default function Home() {
                     }}
                     onClick={(e) => attivaPreDelete(giocatoreInPosizione.id, e)}
                   >
-                    <div className="relative w-full h-full">
+                    <div 
+                      className="relative w-full h-full overflow-hidden"
+                      style={{
+                        borderRadius: '0 0 50% 50%'
+                      }}
+                    >
                       <PlayerImage
                         squadra={giocatoreInPosizione.squadra}
                         nome={giocatoreInPosizione.nome}
                         alt={giocatoreInPosizione.nome}
                         width={400 * canvasScale}
                         height={400 * canvasScale}
-                        className={`rounded-lg object-contain w-full h-full transition-all duration-200 ${
-                          isPreDelete ? 'border-8 border-white' : ''
-                        }`}
+                        className="object-cover w-full h-full transition-all duration-200"
                       />
-                      
-                      {/* Pulsante di eliminazione */}
-                      {isPreDelete && (
+                    </div>
+                    
+                    {/* Bordo circolare per pre-delete */}
+                    {isPreDelete && (
+                      <>
+                        <div
+                          className="absolute border-4 border-white rounded-full pointer-events-none"
+                          style={{
+                            left: `${-30 * canvasScale}px`,
+                            top: `${-30 * canvasScale}px`,
+                            width: `${460 * canvasScale}px`,
+                            height: `${460 * canvasScale}px`,
+                            zIndex: 10000
+                          }}
+                        />
+                        
+                        {/* Pulsante di eliminazione */}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             rimuoviGiocatore(giocatoreInPosizione.id);
                           }}
-                          className="absolute top-0 right-0 bg-red-600 hover:bg-red-700 text-white rounded-full w-12 h-12 flex items-center justify-center text-xl font-bold transition-colors duration-200 shadow-lg"
+                          className="absolute bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center font-bold transition-colors duration-200 shadow-xl border-4 border-white"
                           style={{
-                            transform: 'translate(25%, -25%)',
-                            fontSize: `${20 * canvasScale}px`,
-                            width: `${48 * canvasScale}px`,
-                            height: `${48 * canvasScale}px`
+                            // Posizionamento tangente al bordo circolare a 45° (angolo superiore destro)
+                            // Centro giocatore: (200, 200), raggio bordo: 230px, bottone: 60px
+                            top: `${(200 - Math.cos(Math.PI/4) * 230 - 30) * canvasScale}px`,
+                            right: `${(200 - Math.cos(Math.PI/4) * 230 - 30) * canvasScale}px`,
+                            fontSize: `${24 * canvasScale}px`,
+                            width: `${60 * canvasScale}px`,
+                            height: `${60 * canvasScale}px`,
+                            zIndex: 10001
                           }}
                         >
                           ×
                         </button>
-                      )}
-                    </div>
+                      </>
+                    )}
                   </div>
                 );
               } else {

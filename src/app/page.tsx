@@ -82,6 +82,30 @@ export default function Home() {
     'Milan', 'Napoli', 'Parma', 'Pisa', 'Roma', 'Sassuolo', 'Torino', 'Udinese'
   ];
 
+  // Mapping tra nomi squadre e file loghi
+  const logoMapping: { [key: string]: string } = {
+    'Atalanta': 'atalanta.webp',
+    'Bologna': 'bologna.webp',
+    'Cagliari': 'cagliari.webp',
+    'Como': 'como.webp',
+    'Cremonese': 'cremonese.webp',
+    'Fiorentina': 'fiorentina.webp',
+    'Genoa': 'genoa.webp',
+    'Hellas Verona': 'verona.webp',
+    'Inter': 'inter.webp',
+    'Juventus': 'juve.webp',
+    'Lazio': 'lazio.webp',
+    'Lecce': 'lecce.webp',
+    'Milan': 'milan.webp',
+    'Napoli': 'Napoli.webp',
+    'Parma': 'parma.webp',
+    'Pisa': 'pisa.webp',
+    'Roma': 'roma.webp',
+    'Sassuolo': 'sassuolo.webp',
+    'Torino': 'torino.webp',
+    'Udinese': 'udinese.webp'
+  };
+
   // Colori predefiniti
   const coloriPredefiniti = [
     { nome: 'Grigio Chiaro', colore: '#f1f5f9' },
@@ -783,14 +807,21 @@ export default function Home() {
             
             {!squadraSelezionata ? (
               // Prima fase: selezione squadra
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 {squadreDisponibili.map((squadra) => (
                   <button
                     key={squadra}
                     onClick={() => selezionaSquadra(squadra)}
-                    className="p-3 text-center rounded hover:bg-gray-800 border border-gray-600 hover:border-gray-500 transition-colors text-white text-sm"
+                    className="p-3 rounded hover:bg-gray-800 border border-gray-600 hover:border-gray-500 transition-colors text-white text-sm flex items-center gap-3"
                   >
-                    {squadra}
+                    <Image
+                      src={`/Loghi/${logoMapping[squadra]}`}
+                      alt={`Logo ${squadra}`}
+                      width={32}
+                      height={32}
+                      className="rounded-full object-contain flex-shrink-0"
+                    />
+                    <span className="flex-grow text-left">{squadra}</span>
                   </button>
                 ))}
               </div>

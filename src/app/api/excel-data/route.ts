@@ -32,7 +32,7 @@ export async function GET() {
     
     // Inizia dalla riga 1 (indice 1) per saltare l'header
     for (let i = 1; i < jsonData.length; i++) {
-      const row = jsonData[i] as any[];
+      const row = jsonData[i] as (string | number)[];
       
       // Verifica che la riga abbia abbastanza colonne
       if (row && row.length >= 5) {

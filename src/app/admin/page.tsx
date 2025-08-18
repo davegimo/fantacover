@@ -94,7 +94,7 @@ export default function AdminPage() {
                   hasImage: imageData.exists,
                   imagePath: imageData.imagePath
                 };
-              } catch (error) {
+              } catch {
                 return {
                   ...giocatore,
                   hasImage: false,

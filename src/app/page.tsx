@@ -71,7 +71,20 @@ export default function Home() {
   const [modalAperto, setModalAperto] = useState(false);
   const [ruoloSelezionato, setRuoloSelezionato] = useState<Ruolo | null>(null);
   const [posizioneSelezionata, setPosizioneSelezionata] = useState<{x: number, y: number} | null>(null);
+  const [coloreBackground, setColoreBackground] = useState('#1A1414');
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  // Colori predefiniti
+  const coloriPredefiniti = [
+    { nome: 'Grigio Chiaro', colore: '#f1f5f9' },
+    { nome: 'Azzurro', colore: '#dbeafe' },
+    { nome: 'Verde Menta', colore: '#d1fae5' },
+    { nome: 'Rosa', colore: '#fce7f3' },
+    { nome: 'Giallo', colore: '#fef3c7' },
+    { nome: 'Lavanda', colore: '#e0e7ff' },
+    { nome: 'Pesca', colore: '#fed7aa' },
+    { nome: 'Nero', colore: '#000000' }
+  ];
 
   // Canvas responsive basato su larghezza E altezza del browser
   useEffect(() => {
@@ -292,10 +305,49 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #A855F7 0%, #7C3AED 100%)' }}>
-      <h1 className={`text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-center text-white mb-2 transform -rotate-2 ${leckerliOne.className}`} style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
+    <div 
+      className="min-h-screen flex flex-col items-center py-4" 
+      style={{ 
+        backgroundColor: coloreBackground,
+        backgroundImage: 'radial-gradient(circle, rgba(139,92,246,0.3) 1px, transparent 1px)',
+        backgroundSize: '20px 20px',
+        backgroundRepeat: 'repeat'
+      }}
+    >
+      <h1 className={`text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-center text-white mt-6 mb-6 transform -rotate-2 ${leckerliOne.className}`} style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
         Fantacover.it
       </h1>
+
+      {/* Color Picker per sfondo - temporaneamente nascosto */}
+      {false && (
+        <div className="flex justify-center mb-4">
+          <div className="bg-white bg-opacity-90 backdrop-blur-sm rounded-lg p-3 shadow-lg">
+            <p className="text-sm font-medium text-gray-700 mb-2 text-center">Colore Sfondo</p>
+            <div className="flex gap-2 flex-wrap justify-center">
+              {coloriPredefiniti.map((item) => (
+                <button
+                  key={item.colore}
+                  onClick={() => setColoreBackground(item.colore)}
+                  className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${
+                    coloreBackground === item.colore 
+                      ? 'border-white shadow-lg scale-110' 
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                  style={{ backgroundColor: item.colore }}
+                  title={item.nome}
+                />
+              ))}
+            </div>
+            <input
+              type="color"
+              value={coloreBackground}
+              onChange={(e) => setColoreBackground(e.target.value)}
+              className="w-full h-8 mt-2 rounded border border-gray-300 cursor-pointer"
+              title="Colore personalizzato"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Contatore totale giocatori */}
       <div className="text-center mb-2">
@@ -303,21 +355,6 @@ export default function Home() {
           Giocatori selezionati: {giocatoriSelezionati.length}/25
         </span>
       </div>
-
-      {/* Bottone Download */}
-      {giocatoriSelezionati.length > 0 && (
-        <div className="flex justify-center mb-2">
-          <button
-            onClick={downloadImmagine}
-            className="px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg flex items-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Scarica Immagine
-          </button>
-        </div>
-      )}
       
       {/* Canvas dell'immagine - Sempre centrato */}
       <div className="flex justify-center">
@@ -393,6 +430,21 @@ export default function Home() {
           )}
         </div>
       </div>
+
+      {/* Bottone Download */}
+      {giocatoriSelezionati.length > 0 && (
+        <div className="flex justify-center mt-4">
+          <button
+            onClick={downloadImmagine}
+            className="px-6 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-lg flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Scarica Immagine
+          </button>
+        </div>
+      )}
 
       {/* Modal per selezione giocatori */}
       {modalAperto && ruoloSelezionato && (

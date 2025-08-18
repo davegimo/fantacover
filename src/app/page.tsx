@@ -21,37 +21,37 @@ const giocatoriPerRuolo = {
 // Posizioni predefinite per ogni ruolo nel canvas (ottimizzate per formato Instagram Stories 1080x1920)
 const posizioniRuoli = {
   portieri: [
-    { x: 540, y: 300 },   // Portiere titolare centro
-    { x: 350, y: 400 },   // Portiere riserva sinistra
-    { x: 730, y: 400 }    // Portiere riserva destra
+    { x: 540, y: 500 },   // Portiere titolare centro
+    { x: 350, y: 600 },   // Portiere riserva sinistra
+    { x: 730, y: 600 }    // Portiere riserva destra
   ],
   difensori: [
-    { x: 180, y: 580 },   // Difensore sinistro
-    { x: 370, y: 550 },   // Difensore centrale sinistro
-    { x: 540, y: 530 },   // Difensore centrale
-    { x: 700, y: 560 },   // Difensore centrale destro
-    { x: 900, y: 580 },   // Difensore destro
-    { x: 280, y: 700 },   // Riserva 1
-    { x: 530, y: 710 },   // Riserva 2
-    { x: 800, y: 700 }    // Riserva 3
+    { x: 180, y: 780 },   // Difensore sinistro
+    { x: 370, y: 750 },   // Difensore centrale sinistro
+    { x: 540, y: 730 },   // Difensore centrale
+    { x: 700, y: 760 },   // Difensore centrale destro
+    { x: 900, y: 780 },   // Difensore destro
+    { x: 280, y: 900 },   // Riserva 1
+    { x: 530, y: 910 },   // Riserva 2
+    { x: 800, y: 900 }    // Riserva 3
   ],
   centrocampisti: [
-    { x: 150, y: 830 },   // Centrocampista sinistro
-    { x: 360, y: 850 },   // Centrocampista centrale sinistro
-    { x: 540, y: 870 },   // Centrocampista centrale
-    { x: 720, y: 850 },   // Centrocampista centrale destro
-    { x: 930, y: 830 },   // Centrocampista destro
-    { x: 330, y: 1020 },   // Riserva 1
-    { x: 540, y: 1050 },   // Riserva 2
-    { x: 750, y: 1020 }    // Riserva 3
+    { x: 150, y: 1030 },   // Centrocampista sinistro
+    { x: 360, y: 1050 },   // Centrocampista centrale sinistro
+    { x: 540, y: 1070 },   // Centrocampista centrale
+    { x: 720, y: 1050 },   // Centrocampista centrale destro
+    { x: 930, y: 1030 },   // Centrocampista destro
+    { x: 330, y: 1220 },   // Riserva 1
+    { x: 540, y: 1250 },   // Riserva 2
+    { x: 750, y: 1220 }    // Riserva 3
   ],
   attaccanti: [
-    { x: 170, y: 1200 },  // Attaccante sinistro
-    { x: 320, y: 1250 },  // Attaccante sx interno
-    { x: 910, y: 1200 },  // Attaccante dx 
-    { x: 770, y: 1250 },  // Attaccante destro interno
-    { x: 470, y: 1300 },  // Att centro sx
-    { x: 620, y: 1300 } // Att centro dx 2
+    { x: 170, y: 1400 },  // Attaccante sinistro
+    { x: 320, y: 1450 },  // Attaccante sx interno
+    { x: 910, y: 1400 },  // Attaccante dx 
+    { x: 770, y: 1450 },  // Attaccante destro interno
+    { x: 470, y: 1500 },  // Att centro sx
+    { x: 620, y: 1500 } // Att centro dx 2
   ]
 };
 

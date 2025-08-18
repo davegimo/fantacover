@@ -305,19 +305,23 @@ export default function Home() {
         });
       };
 
-      // Ordina i giocatori per Z-index (come nell'editor): portieri < difensori < centrocampisti < attaccanti
+      // Ordina i giocatori per Z-index ESATTAMENTE come nel canvas: portieri < difensori < centrocampisti < attaccanti
       const giocatoriOrdinati = [...giocatoriSelezionati].sort((a, b) => {
         const zIndexA = 
-          a.ruolo === 'portieri' ? 10 :
-          a.ruolo === 'difensori' ? 20 :
-          a.ruolo === 'centrocampisti' ? 30 : 40; // attaccanti
+          a.ruolo === 'attaccanti' ? 40 :
+          a.ruolo === 'centrocampisti' ? 30 :
+          a.ruolo === 'difensori' ? 20 : 10; // portieri
         
         const zIndexB = 
-          b.ruolo === 'portieri' ? 10 :
-          b.ruolo === 'difensori' ? 20 :
-          b.ruolo === 'centrocampisti' ? 30 : 40; // attaccanti
+          b.ruolo === 'attaccanti' ? 40 :
+          b.ruolo === 'centrocampisti' ? 30 :
+          b.ruolo === 'difensori' ? 20 : 10; // portieri
         
-        return zIndexA - zIndexB;
+        // Ordina per z-index, e in caso di parità per posizione Y per consistenza
+        if (zIndexA !== zIndexB) {
+          return zIndexA - zIndexB;
+        }
+        return a.y - b.y;
       });
 
       // Carica e disegna tutti i giocatori nell'ordine corretto dei layer

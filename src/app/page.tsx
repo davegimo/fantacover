@@ -10,13 +10,7 @@ const leckerliOne = Leckerli_One({
   subsets: ['latin'],
 });
 
-// Lista dei giocatori disponibili organizzati per ruolo
-const giocatoriPerRuolo = {
-  portieri: ['Svilar', 'Carnesecchi'],
-  difensori: ['Acerbi', 'Beukema', 'Abdulhamid', 'Adams'],
-  centrocampisti: ['Barella', 'Calhanoglu', 'Pellegrini', 'Bernabe', 'Bongiorno'],
-  attaccanti: ['Yldiz', 'Pulisic', 'Bonny', 'Beltran', 'Coincecao', 'Zambo', 'Alli']
-};
+
 
 // Posizioni predefinite per ogni ruolo nel canvas (ottimizzate per formato Instagram Stories 1080x1920)
 const posizioniRuoli = {
@@ -38,9 +32,10 @@ const posizioniRuoli = {
   centrocampisti: [
     { x: 150, y: 1030 },   // Centrocampista sinistro
     { x: 360, y: 1050 },   // Centrocampista centrale sinistro
-    { x: 540, y: 1070 },   // Centrocampista centrale
-    { x: 720, y: 1050 },   // Centrocampista centrale destro
+    
     { x: 930, y: 1030 },   // Centrocampista destro
+    { x: 720, y: 1050 },   // Centrocampista centrale destro
+    { x: 540, y: 1070 },   // Centrocampista centrale
     { x: 330, y: 1220 },   // Riserva 1
     { x: 540, y: 1250 },   // Riserva 2
     { x: 750, y: 1220 }    // Riserva 3
@@ -58,6 +53,7 @@ const posizioniRuoli = {
 interface GiocatoreSelezionato {
   nome: string;
   ruolo: 'portieri' | 'difensori' | 'centrocampisti' | 'attaccanti';
+  squadra: string;
   x: number;
   y: number;
   id: string;
@@ -71,10 +67,19 @@ export default function Home() {
   const [modalAperto, setModalAperto] = useState(false);
   const [ruoloSelezionato, setRuoloSelezionato] = useState<Ruolo | null>(null);
   const [posizioneSelezionata, setPosizioneSelezionata] = useState<{x: number, y: number} | null>(null);
+  const [squadraSelezionata, setSquadraSelezionata] = useState<string | null>(null);
+  const [giocatoriSquadra, setGiocatoriSquadra] = useState<string[]>([]);
   const [coloreBackground, setColoreBackground] = useState('#1A1414');
   const [nomeSquadra, setNomeSquadra] = useState('');
   const [dimensioneFontSquadra, setDimensioneFontSquadra] = useState(85);
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  // Lista delle squadre disponibili
+  const squadreDisponibili = [
+    'Atalanta', 'Bologna', 'Cagliari', 'Como', 'Cremonese', 'Fiorentina', 
+    'Genoa', 'Hellas Verona', 'Inter', 'Juventus', 'Lazio', 'Lecce', 
+    'Milan', 'Napoli', 'Parma', 'Pisa', 'Roma', 'Sassuolo', 'Torino', 'Udinese'
+  ];
 
   // Colori predefiniti
   const coloriPredefiniti = [
@@ -128,15 +133,38 @@ export default function Home() {
   const apriModal = (ruolo: Ruolo, posizione: {x: number, y: number}) => {
     setRuoloSelezionato(ruolo);
     setPosizioneSelezionata(posizione);
+    setSquadraSelezionata(null);
+    setGiocatoriSquadra([]);
     setModalAperto(true);
   };
 
+  const selezionaSquadra = async (squadra: string) => {
+    setSquadraSelezionata(squadra);
+    
+    try {
+      // Carica la lista dei giocatori della squadra
+      const response = await fetch(`/api/giocatori-squadra?squadra=${encodeURIComponent(squadra)}`);
+      if (response.ok) {
+        const giocatori = await response.json();
+        setGiocatoriSquadra(giocatori);
+      } else {
+        // Fallback: prova a caricare alcuni giocatori comuni
+        setGiocatoriSquadra(['Giocatore1', 'Giocatore2', 'Giocatore3']);
+      }
+    } catch (error) {
+      console.error('Errore nel caricamento giocatori:', error);
+      // Fallback con giocatori di esempio
+      setGiocatoriSquadra(['Giocatore1', 'Giocatore2', 'Giocatore3']);
+    }
+  };
+
   const aggiungiGiocatore = (nomeGiocatore: string) => {
-    if (!ruoloSelezionato || !posizioneSelezionata) return;
+    if (!ruoloSelezionato || !posizioneSelezionata || !squadraSelezionata) return;
 
     const nuovoGiocatore: GiocatoreSelezionato = {
       nome: nomeGiocatore,
       ruolo: ruoloSelezionato,
+      squadra: squadraSelezionata,
       x: posizioneSelezionata.x,
       y: posizioneSelezionata.y,
       id: `${nomeGiocatore}-${Date.now()}`
@@ -145,6 +173,8 @@ export default function Home() {
     setModalAperto(false);
     setRuoloSelezionato(null);
     setPosizioneSelezionata(null);
+    setSquadraSelezionata(null);
+    setGiocatoriSquadra([]);
   };
 
   const rimuoviGiocatore = (id: string) => {
@@ -301,27 +331,34 @@ export default function Home() {
           };
           
           // Imposta il src per iniziare il caricamento
-          img.src = `/giocatori/${giocatore.nome}.webp`;
+          img.src = `/giocatori2/${giocatore.squadra}/${giocatore.nome}.webp`;
         });
       };
 
-      // Ordina i giocatori per Z-index ESATTAMENTE come nel canvas: portieri < difensori < centrocampisti < attaccanti
+      // Ordina i giocatori ESATTAMENTE come nel canvas seguendo l'ordine di posizioniRuoli
       const giocatoriOrdinati = [...giocatoriSelezionati].sort((a, b) => {
-        const zIndexA = 
-          a.ruolo === 'attaccanti' ? 40 :
-          a.ruolo === 'centrocampisti' ? 30 :
-          a.ruolo === 'difensori' ? 20 : 10; // portieri
+        // Trova l'indice di posizione per ogni giocatore nell'array posizioniRuoli
+        const getPositionIndex = (giocatore: GiocatoreSelezionato) => {
+          const posizioni = posizioniRuoli[giocatore.ruolo];
+          const index = posizioni.findIndex(pos => 
+            Math.abs(pos.x - giocatore.x) < 10 && Math.abs(pos.y - giocatore.y) < 10
+          );
+          return index !== -1 ? index : 999; // Se non trovato, metti alla fine
+        };
+
+        const indexA = getPositionIndex(a);
+        const indexB = getPositionIndex(b);
+
+        // Prima ordina per ruolo (portieri < difensori < centrocampisti < attaccanti)
+        const ruoloOrderA = a.ruolo === 'portieri' ? 0 : a.ruolo === 'difensori' ? 1 : a.ruolo === 'centrocampisti' ? 2 : 3;
+        const ruoloOrderB = b.ruolo === 'portieri' ? 0 : b.ruolo === 'difensori' ? 1 : b.ruolo === 'centrocampisti' ? 2 : 3;
         
-        const zIndexB = 
-          b.ruolo === 'attaccanti' ? 40 :
-          b.ruolo === 'centrocampisti' ? 30 :
-          b.ruolo === 'difensori' ? 20 : 10; // portieri
-        
-        // Ordina per z-index, e in caso di parità per posizione Y per consistenza
-        if (zIndexA !== zIndexB) {
-          return zIndexA - zIndexB;
+        if (ruoloOrderA !== ruoloOrderB) {
+          return ruoloOrderA - ruoloOrderB;
         }
-        return a.y - b.y;
+        
+        // Poi ordina per indice di posizione nell'array del ruolo
+        return indexA - indexB;
       });
 
       // Carica e disegna tutti i giocatori nell'ordine corretto dei layer
@@ -521,11 +558,14 @@ export default function Home() {
               );
 
               if (giocatoreInPosizione) {
-                // Mostra il giocatore
-                const zIndex = 
-                  giocatoreInPosizione.ruolo === 'attaccanti' ? 40 :
-                  giocatoreInPosizione.ruolo === 'centrocampisti' ? 30 :
-                  giocatoreInPosizione.ruolo === 'difensori' ? 20 : 10;
+                // Calcola z-index basato su ruolo + posizione nell'array
+                const ruoloBase = 
+                  giocatoreInPosizione.ruolo === 'portieri' ? 10 :
+                  giocatoreInPosizione.ruolo === 'difensori' ? 20 :
+                  giocatoreInPosizione.ruolo === 'centrocampisti' ? 30 : 40; // attaccanti
+                
+                // Aggiungi l'indice della posizione per l'ordinamento fine
+                const zIndex = ruoloBase + index;
 
                 return (
                   <div
@@ -541,7 +581,7 @@ export default function Home() {
                     onClick={() => rimuoviGiocatore(giocatoreInPosizione.id)}
                   >
                     <Image
-                      src={`/giocatori/${giocatoreInPosizione.nome}.webp`}
+                      src={`/giocatori2/${giocatoreInPosizione.squadra}/${giocatoreInPosizione.nome}.webp`}
                       alt={giocatoreInPosizione.nome}
                       width={400 * canvasScale}
                       height={400 * canvasScale}
@@ -594,32 +634,66 @@ export default function Home() {
           <div className="bg-gray-900 border border-gray-600 rounded-lg p-6 max-w-md w-full max-h-96 overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold text-white">
-                Seleziona {ruoloSelezionato.charAt(0).toUpperCase() + ruoloSelezionato.slice(1)}
+                {!squadraSelezionata ? 'Seleziona Squadra' : `Seleziona ${ruoloSelezionato.charAt(0).toUpperCase() + ruoloSelezionato.slice(1)} - ${squadraSelezionata}`}
               </h3>
               <button
-                onClick={() => setModalAperto(false)}
+                onClick={() => {
+                  setModalAperto(false);
+                  setSquadraSelezionata(null);
+                  setGiocatoriSquadra([]);
+                }}
                 className="text-gray-300 hover:text-white text-xl"
               >
                 ✕
               </button>
             </div>
             
-            <div className="grid grid-cols-1 gap-2">
-              {giocatoriPerRuolo[ruoloSelezionato].map((giocatore) => (
+            {!squadraSelezionata ? (
+              // Prima fase: selezione squadra
+              <div className="grid grid-cols-2 gap-2">
+                {squadreDisponibili.map((squadra) => (
+                  <button
+                    key={squadra}
+                    onClick={() => selezionaSquadra(squadra)}
+                    className="p-3 text-center rounded hover:bg-gray-800 border border-gray-600 hover:border-gray-500 transition-colors text-white text-sm"
+                  >
+                    {squadra}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              // Seconda fase: selezione giocatore
+              <div>
                 <button
-                  key={giocatore}
-                  onClick={() => aggiungiGiocatore(giocatore)}
-                  className={`p-3 text-left rounded hover:bg-gray-800 border transition-colors text-white ${
-                    ruoloSelezionato === 'portieri' ? 'border-green-500 hover:border-green-400' :
-                    ruoloSelezionato === 'difensori' ? 'border-blue-500 hover:border-blue-400' :
-                    ruoloSelezionato === 'centrocampisti' ? 'border-yellow-500 hover:border-yellow-400' :
-                    'border-red-500 hover:border-red-400'
-                  }`}
+                  onClick={() => {
+                    setSquadraSelezionata(null);
+                    setGiocatoriSquadra([]);
+                  }}
+                  className="mb-4 text-blue-400 hover:text-blue-300 text-sm"
                 >
-                  {giocatore}
+                  ← Torna alle squadre
                 </button>
-              ))}
-            </div>
+                <div className="grid grid-cols-1 gap-2">
+                  {giocatoriSquadra.map((giocatore) => (
+                    <button
+                      key={giocatore}
+                      onClick={() => aggiungiGiocatore(giocatore)}
+                      className={`p-3 text-left rounded hover:bg-gray-800 border transition-colors text-white ${
+                        ruoloSelezionato === 'portieri' ? 'border-green-500 hover:border-green-400' :
+                        ruoloSelezionato === 'difensori' ? 'border-blue-500 hover:border-blue-400' :
+                        ruoloSelezionato === 'centrocampisti' ? 'border-yellow-500 hover:border-yellow-400' :
+                        'border-red-500 hover:border-red-400'
+                      }`}
+                    >
+                      {giocatore}
+                    </button>
+                  ))}
+                  {giocatoriSquadra.length === 0 && (
+                    <p className="text-gray-400 text-center py-4">Caricamento giocatori...</p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

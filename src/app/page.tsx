@@ -414,15 +414,15 @@ export default function Home() {
                     key={`${ruolo}-${index}`}
                     className="absolute cursor-pointer flex items-center justify-center bg-white bg-opacity-80 border-4 border-gray-400 rounded-full hover:bg-opacity-100 transition-all"
                     style={{
-                      left: (pos.x - 30) * canvasScale,
-                      top: (pos.y - 30) * canvasScale,
-                      width: `${60 * canvasScale}px`,
-                      height: `${60 * canvasScale}px`,
+                      left: (pos.x - 45) * canvasScale,
+                      top: (pos.y - 45) * canvasScale,
+                      width: `${90 * canvasScale}px`,
+                      height: `${90 * canvasScale}px`,
                       zIndex: 50
                     }}
                     onClick={() => apriModal(ruolo as Ruolo, pos)}
                   >
-                    <span className="text-gray-600 text-3xl font-bold" style={{ fontSize: `${24 * canvasScale}px` }}>+</span>
+                    <span className="text-gray-600 text-4xl font-bold" style={{ fontSize: `${36 * canvasScale}px` }}>+</span>
                   </div>
                 );
               }

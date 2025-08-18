@@ -72,6 +72,8 @@ export default function Home() {
   const [ruoloSelezionato, setRuoloSelezionato] = useState<Ruolo | null>(null);
   const [posizioneSelezionata, setPosizioneSelezionata] = useState<{x: number, y: number} | null>(null);
   const [coloreBackground, setColoreBackground] = useState('#1A1414');
+  const [nomeSquadra, setNomeSquadra] = useState('');
+  const [dimensioneFontSquadra, setDimensioneFontSquadra] = useState(85);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   // Colori predefiniti
@@ -185,6 +187,29 @@ export default function Home() {
         
         fieldImage.src = '/field.jpg';
       });
+
+      // Disegna il nome della squadra se presente
+      if (nomeSquadra) {
+        ctx.fillStyle = 'white';
+        ctx.font = `bold ${dimensioneFontSquadra}px "Leckerli One", cursive`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 3;
+        
+        // Dividi il testo in righe
+        const righe = nomeSquadra.split('\n');
+        const altezzaRiga = dimensioneFontSquadra * 1.1; // Line height 1.1
+        const yStart = 200 - ((righe.length - 1) * altezzaRiga / 2);
+        
+        righe.forEach((riga, index) => {
+          const y = yStart + (index * altezzaRiga);
+          // Disegna il contorno del testo per migliore leggibilità
+          ctx.strokeText(riga, 540, y);
+          // Disegna il testo bianco sopra
+          ctx.fillText(riga, 540, y);
+        });
+      }
 
       // Funzione per caricare e disegnare un'immagine
       const loadAndDrawImage = (giocatore: GiocatoreSelezionato): Promise<void> => {
@@ -355,6 +380,65 @@ export default function Home() {
           Giocatori selezionati: {giocatoriSelezionati.length}/25
         </span>
       </div>
+
+      {/* Editor nome squadra */}
+      <div className="flex justify-center mb-6">
+        <div className="bg-white bg-opacity-90 backdrop-blur-sm rounded-lg p-4 shadow-lg mx-4 flex flex-col items-center">
+          <p className="text-sm font-medium text-gray-700 mb-3 text-center">Nome della Squadra</p>
+          <textarea
+            value={nomeSquadra}
+            onChange={(e) => {
+              const value = e.target.value;
+              // Conta i line break
+              const lineBreaks = (value.match(/\n/g) || []).length;
+              // Permetti al massimo 1 line break (2 righe totali)
+              if (lineBreaks <= 1) {
+                setNomeSquadra(value);
+              }
+            }}
+            onKeyDown={(e) => {
+              // Permetti Invio solo se non c'è già un line break
+              if (e.key === 'Enter') {
+                const lineBreaks = (nomeSquadra.match(/\n/g) || []).length;
+                if (lineBreaks >= 1) {
+                  e.preventDefault(); // Blocca ulteriori Invio
+                }
+              }
+            }}
+            placeholder="Inserisci il nome della squadra..."
+            className="border border-gray-300 rounded-lg text-center font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3 resize-none"
+            style={{ 
+              textAlign: 'center',
+              lineHeight: '1.2',
+              paddingTop: '12px',
+              paddingBottom: '12px',
+              paddingLeft: '12px',
+              paddingRight: '12px',
+              verticalAlign: 'middle',
+              whiteSpace: 'pre',
+              overflowWrap: 'normal',
+              wordWrap: 'normal',
+              minWidth: '200px',
+              width: 'auto',
+              maxWidth: 'none'
+            }}
+            maxLength={50}
+            rows={2}
+          />
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Dimensione:</label>
+            <input
+              type="range"
+              min="24"
+              max="100"
+              value={dimensioneFontSquadra}
+              onChange={(e) => setDimensioneFontSquadra(Number(e.target.value))}
+              className="flex-1"
+            />
+            <span className="text-sm font-medium text-gray-700 w-8 text-right">{dimensioneFontSquadra}</span>
+          </div>
+        </div>
+      </div>
       
       {/* Canvas dell'immagine - Sempre centrato */}
       <div className="flex justify-center">
@@ -371,6 +455,26 @@ export default function Home() {
             backgroundRepeat: 'no-repeat'
           }}
         >
+          {/* Nome della squadra */}
+          {nomeSquadra && (
+            <div
+              className={`absolute text-center font-bold text-white flex items-center justify-center ${leckerliOne.className}`}
+              style={{
+                left: (540 - 400) * canvasScale,
+                top: (200 - (dimensioneFontSquadra * canvasScale)) * canvasScale,
+                width: `${800 * canvasScale}px`,
+                height: `${dimensioneFontSquadra * canvasScale * 2}px`,
+                fontSize: `${dimensioneFontSquadra * canvasScale}px`,
+                textShadow: '3px 3px 6px rgba(0,0,0,0.8)',
+                zIndex: 60,
+                lineHeight: '1.1',
+                whiteSpace: 'pre-line'
+              }}
+            >
+              {nomeSquadra}
+            </div>
+          )}
+
           {/* Posizioni disponibili e giocatori */}
           {Object.entries(posizioniRuoli).map(([ruolo, posizioni]) =>
             posizioni.map((pos, index) => {

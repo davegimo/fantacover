@@ -14,10 +14,11 @@ export async function GET(request: NextRequest) {
     const giocatoriPath = path.join(process.cwd(), 'public', 'giocatori2', squadra);
     const files = await fs.readdir(giocatoriPath);
     
-    // Filtra solo i file .webp e rimuovi l'estensione
+    // Filtra i file .webp e .png e rimuovi l'estensione
     const giocatori = files
-      .filter(file => file.endsWith('.webp'))
-      .map(file => file.replace('.webp', ''));
+      .filter(file => file.endsWith('.webp') || file.endsWith('.png'))
+      .map(file => file.replace(/\.(webp|png)$/, ''))
+      .filter((nome, index, array) => array.indexOf(nome) === index); // Rimuovi duplicati
 
     return NextResponse.json(giocatori);
   } catch (error) {

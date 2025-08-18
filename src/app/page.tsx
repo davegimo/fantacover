@@ -150,6 +150,71 @@ export default function Home() {
     return () => window.removeEventListener('resize', checkIsMobile);
   }, []);
 
+  // Funzione helper per determinare il formato immagine disponibile
+  const getImagePath = async (squadra: string, nome: string): Promise<string> => {
+    // Prova prima .webp, poi .png
+    const formats = ['webp', 'png'];
+    
+    for (const format of formats) {
+      const path = `/giocatori2/${squadra}/${nome}.${format}`;
+      try {
+        const response = await fetch(path, { method: 'HEAD' });
+        if (response.ok) {
+          return path;
+        }
+             } catch {
+         // Continua con il prossimo formato
+       }
+    }
+    
+    // Fallback al .webp se nessuno è trovato
+    return `/giocatori2/${squadra}/${nome}.webp`;
+  };
+
+  // Componente per gestire il caricamento delle immagini con fallback
+  const PlayerImage = ({ squadra, nome, width, height, className, alt }: {
+    squadra: string;
+    nome: string;
+    width: number;
+    height: number;
+    className?: string;
+    alt: string;
+  }) => {
+    const [currentSrc, setCurrentSrc] = useState<string>(`/giocatori2/${squadra}/${nome}.webp`);
+    const [hasError, setHasError] = useState(false);
+
+    const handleError = () => {
+      if (currentSrc.endsWith('.webp')) {
+        // Prova con .png
+        setCurrentSrc(`/giocatori2/${squadra}/${nome}.png`);
+        setHasError(false);
+      } else {
+        // Entrambi i formati hanno fallito
+        setHasError(true);
+      }
+    };
+
+    const handleLoad = () => {
+      setHasError(false);
+    };
+
+    if (hasError) {
+      return null; // Lascia che il componente padre gestisca l'errore
+    }
+
+    return (
+      <Image
+        src={currentSrc}
+        alt={alt}
+        width={width}
+        height={height}
+        className={className}
+        onError={handleError}
+        onLoad={handleLoad}
+      />
+    );
+  };
+
   const apriModal = (ruolo: Ruolo, posizione: {x: number, y: number}) => {
     setRuoloSelezionato(ruolo);
     setPosizioneSelezionata(posizione);
@@ -282,8 +347,8 @@ export default function Home() {
       ctx.restore();
 
       // Funzione per caricare e disegnare un'immagine
-      const loadAndDrawImage = (giocatore: GiocatoreSelezionato): Promise<void> => {
-        return new Promise((resolve) => {
+      const loadAndDrawImage = async (giocatore: GiocatoreSelezionato): Promise<void> => {
+        return new Promise(async (resolve) => {
           const img = document.createElement('img');
           img.crossOrigin = 'anonymous';
           
@@ -350,8 +415,9 @@ export default function Home() {
             resolve();
           };
           
-          // Imposta il src per iniziare il caricamento
-          img.src = `/giocatori2/${giocatore.squadra}/${giocatore.nome}.webp`;
+          // Usa la funzione helper per determinare il formato corretto
+          const imagePath = await getImagePath(giocatore.squadra, giocatore.nome);
+          img.src = imagePath;
         });
       };
 
@@ -661,8 +727,9 @@ export default function Home() {
                     }}
                     onClick={() => rimuoviGiocatore(giocatoreInPosizione.id)}
                   >
-                    <Image
-                      src={`/giocatori2/${giocatoreInPosizione.squadra}/${giocatoreInPosizione.nome}.webp`}
+                    <PlayerImage
+                      squadra={giocatoreInPosizione.squadra}
+                      nome={giocatoreInPosizione.nome}
                       alt={giocatoreInPosizione.nome}
                       width={400 * canvasScale}
                       height={400 * canvasScale}

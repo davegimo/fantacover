@@ -15,6 +15,7 @@ interface GiocatoreExcel {
 interface GiocatoreConFoto {
   nome: string;
   hasFoto: boolean;
+  giaSelezionato: boolean;
 }
 
 // Configura il font Leckerli One
@@ -299,15 +300,22 @@ export default function Home() {
             );
             const imageData = await response.json();
             
+            // Controlla se il giocatore è già stato selezionato
+            const giaSelezionato = giocatoriSelezionati.some(g => 
+              g.nome === giocatore.cognome && g.squadra === giocatore.squadra
+            );
+            
             return {
               nome: giocatore.cognome,
-              hasFoto: imageData.exists
+              hasFoto: imageData.exists,
+              giaSelezionato: giaSelezionato
             };
           } catch (error) {
             console.error(`Errore nel controllare l'immagine per ${giocatore.cognome}:`, error);
             return {
               nome: giocatore.cognome,
-              hasFoto: false
+              hasFoto: false,
+              giaSelezionato: false
             };
           }
         })
@@ -1131,11 +1139,13 @@ export default function Home() {
                   {giocatoriSquadra.map((giocatore) => (
                     <button
                       key={giocatore.nome}
-                      onClick={() => giocatore.hasFoto ? aggiungiGiocatore(giocatore.nome) : undefined}
-                      disabled={!giocatore.hasFoto}
+                      onClick={() => (giocatore.hasFoto && !giocatore.giaSelezionato) ? aggiungiGiocatore(giocatore.nome) : undefined}
+                      disabled={!giocatore.hasFoto || giocatore.giaSelezionato}
                       className={`p-3 text-left rounded border-2 transition-colors flex items-center justify-between ${
                         !giocatore.hasFoto 
                           ? 'border-gray-600 text-gray-500 cursor-not-allowed bg-gray-800' 
+                          : giocatore.giaSelezionato
+                          ? 'border-yellow-600 text-yellow-400 cursor-not-allowed bg-yellow-900 bg-opacity-20'
                           : (() => {
                               const colori = getColoriRuolo(ruoloSelezionato!);
                               return `hover:bg-gray-800 text-white ${colori.border} ${colori.hover}`;
@@ -1143,9 +1153,14 @@ export default function Home() {
                       }`}
                     >
                       <span>{toTitleCase(giocatore.nome)}</span>
-                      {!giocatore.hasFoto && (
-                        <span className="text-red-400 text-lg" title="Foto mancante">📷❌</span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {!giocatore.hasFoto && (
+                          <span className="text-red-400 text-lg" title="Foto mancante">📷❌</span>
+                        )}
+                        {giocatore.giaSelezionato && (
+                          <span className="text-yellow-400 text-lg" title="Giocatore già utilizzato">✓</span>
+                        )}
+                      </div>
                     </button>
                   ))}
                   {giocatoriSquadra.length === 0 && (

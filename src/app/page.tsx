@@ -4,6 +4,19 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { Leckerli_One } from 'next/font/google';
 
+// Interfaccia per i giocatori dall'Excel
+interface GiocatoreExcel {
+  ruolo: string;
+  cognome: string;
+  squadra: string;
+}
+
+// Interfaccia per i giocatori con info foto
+interface GiocatoreConFoto {
+  nome: string;
+  hasFoto: boolean;
+}
+
 // Configura il font Leckerli One
 const leckerliOne = Leckerli_One({
   weight: '400',
@@ -68,12 +81,14 @@ export default function Home() {
   const [ruoloSelezionato, setRuoloSelezionato] = useState<Ruolo | null>(null);
   const [posizioneSelezionata, setPosizioneSelezionata] = useState<{x: number, y: number} | null>(null);
   const [squadraSelezionata, setSquadraSelezionata] = useState<string | null>(null);
-  const [giocatoriSquadra, setGiocatoriSquadra] = useState<string[]>([]);
+  const [giocatoriSquadra, setGiocatoriSquadra] = useState<GiocatoreConFoto[]>([]);
   const [coloreBackground, setColoreBackground] = useState('#1A1414');
   const [nomeSquadra, setNomeSquadra] = useState('');
   const [dimensioneFontSquadra, setDimensioneFontSquadra] = useState(85);
   const [isMobile, setIsMobile] = useState(false);
   const [giocatorePreDelete, setGiocatorePreDelete] = useState<string | null>(null);
+  const [giocatoriExcel, setGiocatoriExcel] = useState<GiocatoreExcel[]>([]);
+  const [loadingExcel, setLoadingExcel] = useState(true);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   // Lista delle squadre disponibili
@@ -268,20 +283,38 @@ export default function Home() {
   const selezionaSquadra = async (squadra: string) => {
     setSquadraSelezionata(squadra);
     
-    try {
-      // Carica la lista dei giocatori della squadra
-      const response = await fetch(`/api/giocatori-squadra?squadra=${encodeURIComponent(squadra)}`);
-      if (response.ok) {
-        const giocatori = await response.json();
-        setGiocatoriSquadra(giocatori);
-      } else {
-        // Fallback: prova a caricare alcuni giocatori comuni
-        setGiocatoriSquadra(['Giocatore1', 'Giocatore2', 'Giocatore3']);
-      }
-    } catch (error) {
-      console.error('Errore nel caricamento giocatori:', error);
-      // Fallback con giocatori di esempio
-      setGiocatoriSquadra(['Giocatore1', 'Giocatore2', 'Giocatore3']);
+    // Filtra i giocatori della squadra e del ruolo selezionato dai dati precaricati
+    if (ruoloSelezionato && giocatoriExcel.length > 0) {
+      const ruoloExcel = mappaRuolo(ruoloSelezionato);
+      const giocatoriFiltrati = giocatoriExcel
+        .filter(g => g.squadra === squadra && g.ruolo === ruoloExcel);
+      
+      // Controlla l'esistenza delle foto per ogni giocatore
+      const giocatoriConFoto = await Promise.all(
+        giocatoriFiltrati.map(async (giocatore) => {
+          try {
+            const response = await fetch(
+              `/api/check-player-image?cognome=${encodeURIComponent(giocatore.cognome)}&squadra=${encodeURIComponent(giocatore.squadra)}`
+            );
+            const imageData = await response.json();
+            
+            return {
+              nome: giocatore.cognome,
+              hasFoto: imageData.exists
+            };
+          } catch (error) {
+            console.error(`Errore nel controllare l'immagine per ${giocatore.cognome}:`, error);
+            return {
+              nome: giocatore.cognome,
+              hasFoto: false
+            };
+          }
+        })
+      );
+      
+      setGiocatoriSquadra(giocatoriConFoto);
+    } else {
+      setGiocatoriSquadra([]);
     }
   };
 
@@ -318,6 +351,44 @@ export default function Home() {
   const annullaPreDelete = () => {
     setGiocatorePreDelete(null);
   };
+
+  // Funzione per convertire il testo in Title Case (prima lettera di ogni parola maiuscola)
+  const toTitleCase = (str: string) => {
+    return str.toLowerCase().split(' ').map(word => 
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
+  };
+
+  // Mapping ruoli canvas -> ruoli Excel
+  const mappaRuolo = (ruoloCanvas: Ruolo): string => {
+    switch (ruoloCanvas) {
+      case 'portieri': return 'P';
+      case 'difensori': return 'D';
+      case 'centrocampisti': return 'C';
+      case 'attaccanti': return 'A';
+      default: return '';
+    }
+  };
+
+  // Precarica i dati Excel all'avvio
+  useEffect(() => {
+    const caricaDatiExcel = async () => {
+      try {
+        setLoadingExcel(true);
+        const response = await fetch('/api/excel-data');
+        if (response.ok) {
+          const data: GiocatoreExcel[] = await response.json();
+          setGiocatoriExcel(data);
+        }
+      } catch (error) {
+        console.error('Errore nel caricamento dati Excel:', error);
+      } finally {
+        setLoadingExcel(false);
+      }
+    };
+
+    caricaDatiExcel();
+  }, []);
 
 
 
@@ -924,7 +995,12 @@ export default function Home() {
                   <button
                     key={squadra}
                     onClick={() => selezionaSquadra(squadra)}
-                    className="p-3 rounded hover:bg-gray-800 border border-gray-600 hover:border-gray-500 transition-colors text-white text-sm flex items-center gap-3"
+                    disabled={loadingExcel}
+                    className={`p-3 rounded border text-sm flex items-center gap-3 transition-colors ${
+                      loadingExcel 
+                        ? 'border-gray-700 text-gray-500 cursor-not-allowed' 
+                        : 'hover:bg-gray-800 border-gray-600 hover:border-gray-500 text-white'
+                    }`}
                   >
                     <Image
                       src={`/Loghi/${logoMapping[squadra]}`}
@@ -952,20 +1028,30 @@ export default function Home() {
                 <div className="grid grid-cols-1 gap-2">
                   {giocatoriSquadra.map((giocatore) => (
                     <button
-                      key={giocatore}
-                      onClick={() => aggiungiGiocatore(giocatore)}
-                      className={`p-3 text-left rounded hover:bg-gray-800 border transition-colors text-white ${
-                        ruoloSelezionato === 'portieri' ? 'border-green-500 hover:border-green-400' :
-                        ruoloSelezionato === 'difensori' ? 'border-blue-500 hover:border-blue-400' :
-                        ruoloSelezionato === 'centrocampisti' ? 'border-yellow-500 hover:border-yellow-400' :
-                        'border-red-500 hover:border-red-400'
+                      key={giocatore.nome}
+                      onClick={() => giocatore.hasFoto ? aggiungiGiocatore(giocatore.nome) : undefined}
+                      disabled={!giocatore.hasFoto}
+                      className={`p-3 text-left rounded border transition-colors flex items-center justify-between ${
+                        !giocatore.hasFoto 
+                          ? 'border-gray-600 text-gray-500 cursor-not-allowed bg-gray-800' 
+                          : `hover:bg-gray-800 text-white ${
+                              ruoloSelezionato === 'portieri' ? 'border-green-500 hover:border-green-400' :
+                              ruoloSelezionato === 'difensori' ? 'border-blue-500 hover:border-blue-400' :
+                              ruoloSelezionato === 'centrocampisti' ? 'border-yellow-500 hover:border-yellow-400' :
+                              'border-red-500 hover:border-red-400'
+                            }`
                       }`}
                     >
-                      {giocatore}
+                      <span>{toTitleCase(giocatore.nome)}</span>
+                      {!giocatore.hasFoto && (
+                        <span className="text-red-400 text-lg" title="Foto mancante">📷❌</span>
+                      )}
                     </button>
                   ))}
                   {giocatoriSquadra.length === 0 && (
-                    <p className="text-gray-400 text-center py-4">Caricamento giocatori...</p>
+                    <p className="text-gray-400 text-center py-4">
+                      {loadingExcel ? 'Caricamento dati...' : 'Nessun giocatore trovato per questo ruolo'}
+                    </p>
                   )}
                 </div>
               </div>

@@ -457,6 +457,19 @@ export default function Home() {
     }
   };
 
+  // Ottieni il nome del font per il canvas HTML
+  const getFontName = (fontId: string) => {
+    switch (fontId) {
+      case 'leckerli': return '"Leckerli One"';
+      case 'roboto': return 'Roboto';
+      case 'oswald': return 'Oswald';
+      case 'bebas': return '"Bebas Neue"';
+      case 'fredoka': return 'Fredoka';
+      case 'righteous': return 'Righteous';
+      default: return '"Leckerli One"';
+    }
+  };
+
   // Lista dei font disponibili
   const fontDisponibili = [
     { id: 'leckerli', nome: 'Leckerli One' },
@@ -662,7 +675,7 @@ export default function Home() {
       // Disegna il nome della squadra se presente
       if (nomeSquadra) {
         ctx.fillStyle = 'white';
-        ctx.font = `bold ${dimensioneFontSquadra}px "Leckerli One", cursive`;
+        ctx.font = `bold ${dimensioneFontSquadra}px ${getFontName(fontSelezionato)}, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.strokeStyle = 'black';

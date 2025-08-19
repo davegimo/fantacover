@@ -116,6 +116,7 @@ export default function Home() {
   const [giocatorePreDelete, setGiocatorePreDelete] = useState<string | null>(null);
   const [giocatoriExcel, setGiocatoriExcel] = useState<GiocatoreExcel[]>([]);
   const [loadingExcel, setLoadingExcel] = useState(true);
+  const [loadingSessione, setLoadingSessione] = useState(true);
   const [statisticheFoto, setStatisticheFoto] = useState<{conFoto: number, totale: number} | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -402,11 +403,13 @@ export default function Home() {
     setSquadraSelezionata(null);
     setGiocatoriSquadra([]);
     setGiocatorePreDelete(null);
+    // La sessione verrà salvata automaticamente dal useEffect
   };
 
   const rimuoviGiocatore = (id: string) => {
     setGiocatoriSelezionati(prev => prev.filter(g => g.id !== id));
     setGiocatorePreDelete(null);
+    // La sessione verrà salvata automaticamente dal useEffect
   };
 
   const attivaPreDelete = (id: string, event: React.MouseEvent) => {
@@ -464,6 +467,35 @@ export default function Home() {
     { id: 'righteous', nome: 'Righteous' }
   ];
 
+  // Funzioni per gestire il localStorage
+  const salvaSessione = () => {
+    if (typeof window !== 'undefined') {
+      const sessionData = {
+        nomeSquadra,
+        fontSelezionato,
+        dimensioneFontSquadra,
+        giocatoriSelezionati,
+        coloreBackground
+      };
+      localStorage.setItem('fantacoverSession', JSON.stringify(sessionData));
+    }
+  };
+
+  const caricaSessione = () => {
+    if (typeof window !== 'undefined') {
+      const sessionData = localStorage.getItem('fantacoverSession');
+      if (sessionData) {
+        try {
+          const data = JSON.parse(sessionData);
+          return data;
+        } catch (error) {
+          console.error('Errore nel caricare la sessione:', error);
+        }
+      }
+    }
+    return null;
+  };
+
   // Colori caratteristici per ruolo
   const getColoriRuolo = (ruolo: Ruolo) => {
     switch (ruolo) {
@@ -510,6 +542,33 @@ export default function Home() {
     }
   };
 
+  // Carica la sessione salvata all'avvio con animazione
+  useEffect(() => {
+    const caricaSessioneConAnimazione = async () => {
+      const sessionData = caricaSessione();
+      
+      if (sessionData) {
+        // Simula un caricamento per mostrare l'animazione
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        // Ripristina i dati progressivamente
+        if (sessionData.nomeSquadra) setNomeSquadra(sessionData.nomeSquadra);
+        if (sessionData.fontSelezionato) setFontSelezionato(sessionData.fontSelezionato);
+        if (sessionData.dimensioneFontSquadra) setDimensioneFontSquadra(sessionData.dimensioneFontSquadra);
+        if (sessionData.coloreBackground) setColoreBackground(sessionData.coloreBackground);
+        
+        // Piccola pausa prima di caricare i giocatori
+        await new Promise(resolve => setTimeout(resolve, 200));
+        if (sessionData.giocatoriSelezionati) setGiocatoriSelezionati(sessionData.giocatoriSelezionati);
+      }
+      
+      // Termina il caricamento
+      setLoadingSessione(false);
+    };
+
+    caricaSessioneConAnimazione();
+  }, []);
+
   // Precarica i dati Excel all'avvio
   useEffect(() => {
     const caricaDatiExcel = async () => {
@@ -532,6 +591,11 @@ export default function Home() {
 
     caricaDatiExcel();
   }, []);
+
+  // Salva automaticamente la sessione quando cambiano i dati
+  useEffect(() => {
+    salvaSessione();
+  }, [nomeSquadra, fontSelezionato, dimensioneFontSquadra, giocatoriSelezionati, coloreBackground]);
 
   // Calcola le statistiche delle foto disponibili
   const calcolaStatisticheFoto = async (giocatori: GiocatoreExcel[]) => {
@@ -830,6 +894,16 @@ export default function Home() {
         backgroundRepeat: 'repeat'
       }}
     >
+      {/* Overlay di caricamento sessione */}
+      {loadingSessione && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 flex flex-col items-center shadow-2xl">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mb-4"></div>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">Caricamento in corso...</h3>
+            <p className="text-gray-600 text-center">Ripristino della tua formazione salvata</p>
+          </div>
+        </div>
+      )}
       <h1 className={`text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-center text-white mt-6 mb-6 transform -rotate-2 ${leckerliOne.className}`} style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
         Fantacover.it
       </h1>

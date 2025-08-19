@@ -119,6 +119,8 @@ export default function Home() {
   const [loadingSessione, setLoadingSessione] = useState(true);
   const [statisticheFoto, setStatisticheFoto] = useState<{conFoto: number, totale: number} | null>(null);
   const [loadingDownload, setLoadingDownload] = useState(false);
+  const [preloadedCanvas, setPreloadedCanvas] = useState<HTMLCanvasElement | null>(null);
+  const [isPreloading, setIsPreloading] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   // Lista delle squadre disponibili
@@ -611,6 +613,18 @@ export default function Home() {
     salvaSessione();
   }, [nomeSquadra, fontSelezionato, dimensioneFontSquadra, giocatoriSelezionati, coloreBackground]);
 
+  // Precarica l'immagine quando cambiano i dati (ottimizzazione per iPhone)
+  useEffect(() => {
+    if (!loadingSessione && giocatoriSelezionati.length > 0) {
+      // Debounce per evitare precaricamenti eccessivi
+      const timeoutId = setTimeout(() => {
+        preloadImmagine();
+      }, 500); // Aspetta 500ms dopo l'ultimo cambiamento
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [nomeSquadra, fontSelezionato, dimensioneFontSquadra, giocatoriSelezionati, loadingSessione]);
+
   // Calcola le statistiche delle foto disponibili
   const calcolaStatisticheFoto = async (giocatori: GiocatoreExcel[]) => {
     try {
@@ -637,6 +651,23 @@ export default function Home() {
   };
 
 
+
+  // Funzione di precaricamento ottimizzata per iPhone
+  const preloadImmagine = async () => {
+    if (isPreloading || giocatoriSelezionati.length === 0) return;
+    
+    setIsPreloading(true);
+    try {
+      const canvas = await downloadImmagine();
+      if (canvas) {
+        setPreloadedCanvas(canvas);
+      }
+    } catch (error) {
+      console.warn('Errore durante il precaricamento:', error);
+    } finally {
+      setIsPreloading(false);
+    }
+  };
 
   const downloadImmagine = async () => {
     try {
@@ -857,15 +888,9 @@ export default function Home() {
   const scaricaImmagine = async () => {
     setLoadingDownload(true);
     
-    // Timeout di sicurezza per evitare loading infinito
-    const timeoutId = setTimeout(() => {
-      setLoadingDownload(false);
-      console.warn('Timeout durante la preparazione dell\'immagine');
-    }, 10000); // 10 secondi
-    
     try {
-      const canvas = await downloadImmagine();
-      clearTimeout(timeoutId); // Cancella il timeout se tutto va bene
+      // Usa il canvas precaricato se disponibile, altrimenti genera al volo
+      const canvas = preloadedCanvas || await downloadImmagine();
       
       if (canvas) {
         // Scarica l'immagine
@@ -886,7 +911,6 @@ export default function Home() {
         setLoadingDownload(false);
       }
     } catch (error) {
-      clearTimeout(timeoutId);
       console.error('Errore durante il download:', error);
       setLoadingDownload(false);
     }
@@ -898,15 +922,9 @@ export default function Home() {
   const condividiMobile = async () => {
     setLoadingDownload(true);
     
-    // Timeout di sicurezza per evitare loading infinito
-    const timeoutId = setTimeout(() => {
-      setLoadingDownload(false);
-      console.warn('Timeout durante la preparazione dell\'immagine');
-    }, 10000); // 10 secondi
-    
     try {
-      const canvas = await downloadImmagine();
-      clearTimeout(timeoutId); // Cancella il timeout se tutto va bene
+      // Usa il canvas precaricato se disponibile per performance ottimale su iPhone
+      const canvas = preloadedCanvas || await downloadImmagine();
       
       if (canvas) {
         canvas.toBlob(async (blob) => {
@@ -939,7 +957,6 @@ export default function Home() {
         setLoadingDownload(false);
       }
     } catch (error) {
-      clearTimeout(timeoutId);
       console.error('Errore durante la condivisione:', error);
       setLoadingDownload(false);
     }
@@ -1130,6 +1147,9 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
                   </svg>
                   Condividi
+                  {preloadedCanvas && (
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse ml-1" title="Immagine precaricata - condivisione rapida!"></div>
+                  )}
                 </>
               )}
             </button>
@@ -1158,6 +1178,9 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                   Scarica Immagine
+                  {preloadedCanvas && (
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse ml-1" title="Immagine precaricata - download rapido!"></div>
+                  )}
                 </>
               )}
             </button>

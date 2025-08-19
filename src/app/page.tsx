@@ -856,8 +856,17 @@ export default function Home() {
 
   const scaricaImmagine = async () => {
     setLoadingDownload(true);
+    
+    // Timeout di sicurezza per evitare loading infinito
+    const timeoutId = setTimeout(() => {
+      setLoadingDownload(false);
+      console.warn('Timeout durante la preparazione dell\'immagine');
+    }, 10000); // 10 secondi
+    
     try {
       const canvas = await downloadImmagine();
+      clearTimeout(timeoutId); // Cancella il timeout se tutto va bene
+      
       if (canvas) {
         // Scarica l'immagine
         canvas.toBlob((blob) => {
@@ -877,6 +886,7 @@ export default function Home() {
         setLoadingDownload(false);
       }
     } catch (error) {
+      clearTimeout(timeoutId);
       console.error('Errore durante il download:', error);
       setLoadingDownload(false);
     }
@@ -887,22 +897,38 @@ export default function Home() {
   // Funzione di condivisione unificata per mobile
   const condividiMobile = async () => {
     setLoadingDownload(true);
+    
+    // Timeout di sicurezza per evitare loading infinito
+    const timeoutId = setTimeout(() => {
+      setLoadingDownload(false);
+      console.warn('Timeout durante la preparazione dell\'immagine');
+    }, 10000); // 10 secondi
+    
     try {
       const canvas = await downloadImmagine();
+      clearTimeout(timeoutId); // Cancella il timeout se tutto va bene
+      
       if (canvas) {
-        canvas.toBlob((blob) => {
+        canvas.toBlob(async (blob) => {
           if (blob) {
             const file = new File([blob], `fantacover-${Date.now()}.png`, { type: 'image/png' });
             
+            // Ferma il loading prima di mostrare l'API di condivisione
+            setLoadingDownload(false);
+            
             if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-              navigator.share({
-                title: 'La mia Fantacover',
-                text: 'Guarda la mia formazione creata con Fantacover! 🏆⚽',
-                files: [file]
-              }).catch(console.error).finally(() => setLoadingDownload(false));
+              try {
+                await navigator.share({
+                  title: 'La mia Fantacover',
+                  text: 'Guarda la mia formazione creata con Fantacover! 🏆⚽',
+                  files: [file]
+                });
+              } catch (error) {
+                // L'utente ha annullato la condivisione o c'è stato un errore
+                console.log('Condivisione annullata o errore:', error);
+              }
             } else {
-              // Fallback: scarica l'immagine (che ha già il suo loading)
-              setLoadingDownload(false);
+              // Fallback: scarica l'immagine
               scaricaImmagine();
             }
           } else {
@@ -913,6 +939,7 @@ export default function Home() {
         setLoadingDownload(false);
       }
     } catch (error) {
+      clearTimeout(timeoutId);
       console.error('Errore durante la condivisione:', error);
       setLoadingDownload(false);
     }

@@ -203,12 +203,12 @@ export default function Home() {
         // Tablet o desktop piccolo: scala tra 20% e 50%
         setCanvasScale(Math.min(Math.max(calculatedScale, 0.2), 0.5));
       } else {
-        // Mobile: scala più conservativa per gestire i cambi di altezza del browser
-        // Riduce il massimo da 35% a 30% e il minimo da 15% a 12%
+        // Mobile: scala fissa per evitare cambiamenti con piccole variazioni di altezza
         const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         if (isMobileDevice) {
-          // Per dispositivi mobili: scala più conservativa per gestire barre browser dinamiche
-          setCanvasScale(Math.min(Math.max(calculatedScale * 0.85, 0.12), 0.28));
+          // Per dispositivi mobili: scala fissa basata sulla larghezza
+          const fixedScale = Math.min(scaleByWidth * 0.9, 0.25);
+          setCanvasScale(fixedScale);
         } else {
           // Per altri dispositivi piccoli: scala normale
           setCanvasScale(Math.min(Math.max(calculatedScale, 0.15), 0.35));

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { Leckerli_One } from 'next/font/google';
+import { Leckerli_One, Roboto, Oswald, Bebas_Neue, Fredoka, Righteous } from 'next/font/google';
 
 // Interfaccia per i giocatori dall'Excel
 interface GiocatoreExcel {
@@ -18,8 +18,33 @@ interface GiocatoreConFoto {
   giaSelezionato: boolean;
 }
 
-// Configura il font Leckerli One
+// Configura i font disponibili
 const leckerliOne = Leckerli_One({
+  weight: '400',
+  subsets: ['latin'],
+});
+
+const roboto = Roboto({
+  weight: ['400', '700'],
+  subsets: ['latin'],
+});
+
+const oswald = Oswald({
+  weight: ['400', '700'],
+  subsets: ['latin'],
+});
+
+const bebasNeue = Bebas_Neue({
+  weight: '400',
+  subsets: ['latin'],
+});
+
+const fredoka = Fredoka({
+  weight: ['400', '700'],
+  subsets: ['latin'],
+});
+
+const righteous = Righteous({
   weight: '400',
   subsets: ['latin'],
 });
@@ -84,8 +109,9 @@ export default function Home() {
   const [squadraSelezionata, setSquadraSelezionata] = useState<string | null>(null);
   const [giocatoriSquadra, setGiocatoriSquadra] = useState<GiocatoreConFoto[]>([]);
   const [coloreBackground, setColoreBackground] = useState('#1A1414');
-  const [nomeSquadra, setNomeSquadra] = useState('');
-  const [dimensioneFontSquadra, setDimensioneFontSquadra] = useState(85);
+  const [nomeSquadra, setNomeSquadra] = useState('Nome squadra');
+  const [dimensioneFontSquadra, setDimensioneFontSquadra] = useState(100);
+  const [fontSelezionato, setFontSelezionato] = useState('fredoka');
   const [isMobile, setIsMobile] = useState(false);
   const [giocatorePreDelete, setGiocatorePreDelete] = useState<string | null>(null);
   const [giocatoriExcel, setGiocatoriExcel] = useState<GiocatoreExcel[]>([]);
@@ -383,6 +409,29 @@ export default function Home() {
   const getLetteraRuolo = (ruolo: string): string => {
     return mappaRuolo(ruolo as Ruolo);
   };
+
+  // Ottieni la classe CSS del font selezionato
+  const getFontClass = (fontId: string) => {
+    switch (fontId) {
+      case 'leckerli': return leckerliOne.className;
+      case 'roboto': return roboto.className;
+      case 'oswald': return oswald.className;
+      case 'bebas': return bebasNeue.className;
+      case 'fredoka': return fredoka.className;
+      case 'righteous': return righteous.className;
+      default: return leckerliOne.className;
+    }
+  };
+
+  // Lista dei font disponibili
+  const fontDisponibili = [
+    { id: 'leckerli', nome: 'Leckerli One' },
+    { id: 'roboto', nome: 'Roboto' },
+    { id: 'oswald', nome: 'Oswald' },
+    { id: 'bebas', nome: 'Bebas Neue' },
+    { id: 'fredoka', nome: 'Fredoka' },
+    { id: 'righteous', nome: 'Righteous' }
+  ];
 
   // Colori caratteristici per ruolo
   const getColoriRuolo = (ruolo: Ruolo) => {
@@ -795,7 +844,6 @@ export default function Home() {
       {/* Editor nome squadra */}
       <div className="flex justify-center mb-6">
         <div className="bg-white bg-opacity-90 backdrop-blur-sm rounded-lg p-4 shadow-lg mx-4 flex flex-col items-center">
-          <p className="text-sm font-medium text-gray-700 mb-3 text-center">Nome della Squadra</p>
           <textarea
             value={nomeSquadra}
             onChange={(e) => {
@@ -816,8 +864,8 @@ export default function Home() {
                 }
               }
             }}
-            placeholder="Inserisci il nome della squadra..."
-            className="border border-gray-300 rounded-lg text-center font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3 resize-none"
+            placeholder="Inserisci il nome della tua squadra!"
+            className="border border-gray-300 rounded-lg text-center font-bold text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3 resize-none text-sm"
             style={{ 
               textAlign: 'center',
               lineHeight: '1.2',
@@ -829,24 +877,38 @@ export default function Home() {
               whiteSpace: 'pre',
               overflowWrap: 'normal',
               wordWrap: 'normal',
-              minWidth: '200px',
+              minWidth: '320px',
               width: 'auto',
               maxWidth: 'none'
             }}
             maxLength={50}
             rows={2}
           />
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mb-3">
             <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Dimensione:</label>
             <input
               type="range"
               min="24"
-              max="100"
+              max="150"
               value={dimensioneFontSquadra}
               onChange={(e) => setDimensioneFontSquadra(Number(e.target.value))}
               className="flex-1"
             />
             <span className="text-sm font-medium text-gray-700 w-8 text-right">{dimensioneFontSquadra}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Font:</label>
+            <select
+              value={fontSelezionato}
+              onChange={(e) => setFontSelezionato(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {fontDisponibili.map((font) => (
+                <option key={font.id} value={font.id}>
+                  {font.nome}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
       </div>
@@ -899,10 +961,10 @@ export default function Home() {
           {/* Nome della squadra */}
           {nomeSquadra && (
             <div
-              className={`absolute text-center font-bold text-white flex items-center justify-center ${leckerliOne.className}`}
+              className={`absolute text-center font-bold text-white flex items-center justify-center ${getFontClass(fontSelezionato)}`}
               style={{
                 left: (540 - 400) * canvasScale,
-                top: (200 - (dimensioneFontSquadra * canvasScale)) * canvasScale,
+                top: (150 - (dimensioneFontSquadra * canvasScale)) * canvasScale,
                 width: `${800 * canvasScale}px`,
                 height: `${dimensioneFontSquadra * canvasScale * 2}px`,
                 fontSize: `${dimensioneFontSquadra * canvasScale}px`,

@@ -727,17 +727,17 @@ export default function Home() {
         });
       }
 
-      // Disegna la scritta fantacover.it in basso a destra
+      // Disegna la scritta fantacover.it centrata
       ctx.fillStyle = 'white';
-      ctx.font = `bold 60px "Leckerli One", cursive`;
-      ctx.textAlign = 'right';
+      ctx.font = `bold 69px "Leckerli One", cursive`; // Aumentato del 15% (60 * 1.15 = 69)
+      ctx.textAlign = 'center';
       ctx.textBaseline = 'bottom';
       ctx.strokeStyle = 'black';
       ctx.lineWidth = 4;
       
       // Salva il contesto per la rotazione
       ctx.save();
-      ctx.translate(1060, 1890); // Posizione in basso a destra
+      ctx.translate(540, 1860); // Abbassato di 70px (1790 + 70 = 1860)
       ctx.rotate(-2 * Math.PI / 180); // Rotazione di -2 gradi
       
       // Disegna il contorno e il testo
@@ -1227,15 +1227,16 @@ export default function Home() {
             </div>
           )}
 
-          {/* Scritta fantacover.it in basso a destra */}
+          {/* Scritta fantacover.it centrata */}
           <div
             className={`absolute text-white font-bold transform -rotate-2 ${leckerliOne.className}`}
             style={{
-              right: `${20 * canvasScale}px`,
-              bottom: `${30 * canvasScale}px`,
-              fontSize: `${60 * canvasScale}px`,
+              left: `${540 * canvasScale}px`,
+              bottom: `${60 * canvasScale}px`, // Abbassato di 70px (130 - 70 = 60)
+              fontSize: `${69 * canvasScale}px`, // Aumentato del 15% (60 * 1.15 = 69)
               textShadow: '3px 3px 6px rgba(0,0,0,0.8)',
-              zIndex: 70
+              zIndex: 70,
+              transform: `translateX(-50%) rotate(-2deg)` // Centra il testo
             }}
           >
             Fantacover.it

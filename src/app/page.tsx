@@ -376,6 +376,52 @@ export default function Home() {
     return mappaRuolo(ruolo as Ruolo);
   };
 
+  // Colori caratteristici per ruolo
+  const getColoriRuolo = (ruolo: Ruolo) => {
+    switch (ruolo) {
+      case 'portieri':
+        return {
+          bg: 'bg-orange-400 bg-opacity-80', // Giallo-Arancione con trasparenza
+          border: 'border-orange-400',
+          borderCanvas: 'border-orange-600 border-opacity-30', // Bordo più scuro e molto trasparente per canvas
+          hover: 'hover:border-orange-300',
+          text: 'text-orange-800'
+        };
+      case 'difensori':
+        return {
+          bg: 'bg-green-400 bg-opacity-80', // Verde chiaro medio con trasparenza
+          border: 'border-green-400',
+          borderCanvas: 'border-green-600 border-opacity-30', // Bordo più scuro e molto trasparente per canvas
+          hover: 'hover:border-green-300',
+          text: 'text-green-800'
+        };
+      case 'centrocampisti':
+        return {
+          bg: 'bg-sky-400 bg-opacity-80', // Blu chiaro con trasparenza
+          border: 'border-sky-400',
+          borderCanvas: 'border-sky-600 border-opacity-30', // Bordo più scuro e molto trasparente per canvas
+          hover: 'hover:border-sky-300',
+          text: 'text-sky-800'
+        };
+      case 'attaccanti':
+        return {
+          bg: 'bg-red-400 bg-opacity-80', // Rosso con trasparenza
+          border: 'border-red-400',
+          borderCanvas: 'border-red-600 border-opacity-30', // Bordo più scuro e molto trasparente per canvas
+          hover: 'hover:border-red-300',
+          text: 'text-red-800'
+        };
+      default:
+        return {
+          bg: 'bg-gray-400 bg-opacity-80',
+          border: 'border-gray-400',
+          borderCanvas: 'border-gray-600 border-opacity-30',
+          hover: 'hover:border-gray-300',
+          text: 'text-gray-800'
+        };
+    }
+  };
+
   // Precarica i dati Excel all'avvio
   useEffect(() => {
     const caricaDatiExcel = async () => {
@@ -894,6 +940,7 @@ export default function Home() {
                 const zIndex = ruoloBase + index;
 
                 const isPreDelete = giocatorePreDelete === giocatoreInPosizione.id;
+                const coloriRuolo = getColoriRuolo(giocatoreInPosizione.ruolo);
                 
                 return (
                   <div
@@ -963,11 +1010,12 @@ export default function Home() {
                   </div>
                 );
               } else {
-                // Mostra il cerchio +
+                // Mostra il cerchio con lettera ruolo
+                const coloriRuolo = getColoriRuolo(ruolo as Ruolo);
                 return (
                   <div
                     key={`${ruolo}-${index}`}
-                    className="absolute cursor-pointer flex items-center justify-center bg-white bg-opacity-80 border-4 border-gray-400 rounded-full hover:bg-opacity-100 transition-all"
+                    className={`absolute cursor-pointer flex items-center justify-center ${coloriRuolo.bg} border-2 ${coloriRuolo.borderCanvas} rounded-full hover:bg-opacity-100 transition-all`}
                     style={{
                       left: (pos.x - 45) * canvasScale,
                       top: (pos.y - 45) * canvasScale,
@@ -981,7 +1029,7 @@ export default function Home() {
                       apriModal(ruolo as Ruolo, pos);
                     }}
                   >
-                    <span className="text-gray-600 text-4xl font-bold" style={{ fontSize: `${36 * canvasScale}px` }}>
+                    <span className={`${coloriRuolo.text} text-4xl font-bold`} style={{ fontSize: `${36 * canvasScale}px` }}>
                       {getLetteraRuolo(ruolo)}
                     </span>
                   </div>
@@ -1085,15 +1133,13 @@ export default function Home() {
                       key={giocatore.nome}
                       onClick={() => giocatore.hasFoto ? aggiungiGiocatore(giocatore.nome) : undefined}
                       disabled={!giocatore.hasFoto}
-                      className={`p-3 text-left rounded border transition-colors flex items-center justify-between ${
+                      className={`p-3 text-left rounded border-2 transition-colors flex items-center justify-between ${
                         !giocatore.hasFoto 
                           ? 'border-gray-600 text-gray-500 cursor-not-allowed bg-gray-800' 
-                          : `hover:bg-gray-800 text-white ${
-                              ruoloSelezionato === 'portieri' ? 'border-green-500 hover:border-green-400' :
-                              ruoloSelezionato === 'difensori' ? 'border-blue-500 hover:border-blue-400' :
-                              ruoloSelezionato === 'centrocampisti' ? 'border-yellow-500 hover:border-yellow-400' :
-                              'border-red-500 hover:border-red-400'
-                            }`
+                          : (() => {
+                              const colori = getColoriRuolo(ruoloSelezionato!);
+                              return `hover:bg-gray-800 text-white ${colori.border} ${colori.hover}`;
+                            })()
                       }`}
                     >
                       <span>{toTitleCase(giocatore.nome)}</span>

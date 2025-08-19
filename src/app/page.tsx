@@ -995,14 +995,17 @@ export default function Home() {
               className={`absolute text-center font-bold text-white flex items-center justify-center ${getFontClass(fontSelezionato)}`}
               style={{
                 left: (540 - 400) * canvasScale,
-                top: (150 - (dimensioneFontSquadra * canvasScale)) * canvasScale,
+                top: (120) * canvasScale,
                 width: `${800 * canvasScale}px`,
-                height: `${dimensioneFontSquadra * canvasScale * 2}px`,
+                height: `${200 * canvasScale}px`,
                 fontSize: `${dimensioneFontSquadra * canvasScale}px`,
                 textShadow: '3px 3px 6px rgba(0,0,0,0.8)',
                 zIndex: 45,
                 lineHeight: '1.1',
-                whiteSpace: 'pre-line'
+                whiteSpace: 'pre-line',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
             >
               {nomeSquadra}

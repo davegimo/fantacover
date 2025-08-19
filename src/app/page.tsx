@@ -89,6 +89,7 @@ export default function Home() {
   const [giocatorePreDelete, setGiocatorePreDelete] = useState<string | null>(null);
   const [giocatoriExcel, setGiocatoriExcel] = useState<GiocatoreExcel[]>([]);
   const [loadingExcel, setLoadingExcel] = useState(true);
+  const [statisticheFoto, setStatisticheFoto] = useState<{conFoto: number, totale: number} | null>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   // Lista delle squadre disponibili
@@ -384,6 +385,9 @@ export default function Home() {
         if (response.ok) {
           const data: GiocatoreExcel[] = await response.json();
           setGiocatoriExcel(data);
+          
+          // Calcola le statistiche delle foto
+          await calcolaStatisticheFoto(data);
         }
       } catch (error) {
         console.error('Errore nel caricamento dati Excel:', error);
@@ -394,6 +398,31 @@ export default function Home() {
 
     caricaDatiExcel();
   }, []);
+
+  // Calcola le statistiche delle foto disponibili
+  const calcolaStatisticheFoto = async (giocatori: GiocatoreExcel[]) => {
+    try {
+      const controlliParalleli = giocatori.map(async (giocatore) => {
+        try {
+          const response = await fetch(
+            `/api/check-player-image?cognome=${encodeURIComponent(giocatore.cognome)}&squadra=${encodeURIComponent(giocatore.squadra)}`
+          );
+          const imageData = await response.json();
+          return imageData.exists;
+        } catch (error) {
+          return false;
+        }
+      });
+
+      const risultati = await Promise.all(controlliParalleli);
+      const conFoto = risultati.filter(Boolean).length;
+      const totale = giocatori.length;
+
+      setStatisticheFoto({ conFoto, totale });
+    } catch (error) {
+      console.error('Errore nel calcolare le statistiche foto:', error);
+    }
+  };
 
 
 
@@ -961,6 +990,24 @@ export default function Home() {
             })
           )}
         </div>
+      </div>
+
+      {/* Statistiche foto */}
+      <div className="text-center mt-6 mb-8">
+        {statisticheFoto ? (
+          <div className="text-white">
+            <p className="text-lg font-semibold mb-2">
+              Abbiamo le foto di <span className="text-green-400">{statisticheFoto.conFoto}</span> giocatori su <span className="text-blue-400">{statisticheFoto.totale}</span>!
+            </p>
+            <p className="text-gray-300 text-sm">
+              Aiutaci a trovare le foto di tutti i calciatori!
+            </p>
+          </div>
+        ) : (
+          <div className="text-gray-400">
+            <p className="text-sm">Caricamento statistiche...</p>
+          </div>
+        )}
       </div>
 
       {/* Modal per selezione giocatori */}

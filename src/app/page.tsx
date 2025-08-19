@@ -370,6 +370,11 @@ export default function Home() {
     }
   };
 
+  // Ottieni la lettera del ruolo per il display
+  const getLetteraRuolo = (ruolo: string): string => {
+    return mappaRuolo(ruolo as Ruolo);
+  };
+
   // Precarica i dati Excel all'avvio
   useEffect(() => {
     const caricaDatiExcel = async () => {
@@ -947,7 +952,9 @@ export default function Home() {
                       apriModal(ruolo as Ruolo, pos);
                     }}
                   >
-                    <span className="text-gray-600 text-4xl font-bold" style={{ fontSize: `${36 * canvasScale}px` }}>+</span>
+                    <span className="text-gray-600 text-4xl font-bold" style={{ fontSize: `${36 * canvasScale}px` }}>
+                      {getLetteraRuolo(ruolo)}
+                    </span>
                   </div>
                 );
               }

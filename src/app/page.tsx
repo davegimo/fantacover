@@ -203,14 +203,45 @@ export default function Home() {
         // Tablet o desktop piccolo: scala tra 20% e 50%
         setCanvasScale(Math.min(Math.max(calculatedScale, 0.2), 0.5));
       } else {
-        // Mobile: scala tra 15% e 35%
-        setCanvasScale(Math.min(Math.max(calculatedScale, 0.15), 0.35));
+        // Mobile: scala più conservativa per gestire i cambi di altezza del browser
+        // Riduce il massimo da 35% a 30% e il minimo da 15% a 12%
+        const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        if (isMobileDevice) {
+          // Per dispositivi mobili: scala più conservativa per gestire barre browser dinamiche
+          setCanvasScale(Math.min(Math.max(calculatedScale * 0.85, 0.12), 0.28));
+        } else {
+          // Per altri dispositivi piccoli: scala normale
+          setCanvasScale(Math.min(Math.max(calculatedScale, 0.15), 0.35));
+        }
       }
     };
 
     calculateScale();
     window.addEventListener('resize', calculateScale);
-    return () => window.removeEventListener('resize', calculateScale);
+    
+    // Per dispositivi mobili, aggiungi anche listener per orientationchange e visualViewport
+    const isMobileDevice = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (isMobileDevice) {
+      window.addEventListener('orientationchange', () => {
+        // Ritarda il calcolo per permettere al browser di completare la transizione
+        setTimeout(calculateScale, 300);
+      });
+      
+      // Se supportato, usa visualViewport per reagire ai cambiamenti della UI del browser
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', calculateScale);
+      }
+    }
+    
+    return () => {
+      window.removeEventListener('resize', calculateScale);
+      if (isMobileDevice) {
+        window.removeEventListener('orientationchange', calculateScale);
+        if (window.visualViewport) {
+          window.visualViewport.removeEventListener('resize', calculateScale);
+        }
+      }
+    };
   }, []);
 
   // Rileva se il dispositivo è mobile

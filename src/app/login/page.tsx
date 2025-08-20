@@ -100,7 +100,7 @@ export default function LoginPage() {
 
         <div className="text-center text-xs text-white text-opacity-70 mt-8">
           <p>🔐 Sito temporaneamente protetto</p>
-          <p>Contatta l'amministratore per l'accesso</p>
+          <p>Contatta l&apos;amministratore per l&apos;accesso</p>
         </div>
       </div>
     </div>

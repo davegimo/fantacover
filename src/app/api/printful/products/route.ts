@@ -1,14 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import axios from 'axios';
 
 const PRINTFUL_API_URL = 'https://api.printful.com';
 const PRINTFUL_API_KEY = process.env.PRINTFUL_API_KEY;
 
-if (!PRINTFUL_API_KEY) {
-  console.warn('PRINTFUL_API_KEY non configurata nelle variabili d\'ambiente');
-}
-
-// Configurazione axios per Printful
 const printfulApi = axios.create({
   baseURL: PRINTFUL_API_URL,
   headers: {
@@ -26,69 +21,33 @@ export async function GET() {
       );
     }
 
-    // Recupera tutti i prodotti dal negozio Printful
     const response = await printfulApi.get('/store/products');
     
-    if (response.data && response.data.result) {
-      // Per ogni prodotto, recupera anche i dettagli delle varianti
-      const prodottiConVarianti = await Promise.all(
-        response.data.result
-          .filter((prodotto: any) => !prodotto.is_ignored)
-          .map(async (prodotto: any) => {
-            try {
-              // Recupera i dettagli del prodotto per avere le varianti complete
-              const dettagliResponse = await printfulApi.get(`/store/products/${prodotto.id}`);
-              const dettagli = dettagliResponse.data?.result;
-              
-              return {
-                id: prodotto.id,
-                nome: prodotto.name,
-                tipo: prodotto.type,
-                thumbnail_url: prodotto.thumbnail_url,
-                is_ignored: prodotto.is_ignored,
-                sync_variants: dettagli?.sync_variants?.map((variant: any) => ({
-                  id: variant.id,
-                  name: variant.name,
-                  size: variant.size,
-                  color: variant.color,
-                  price: variant.retail_price,
-                  currency: variant.currency,
-                  in_stock: variant.availability_status !== 'out_of_stock'
-                })) || []
-              };
-            } catch (error) {
-              console.error(`Errore nel recupero dettagli prodotto ${prodotto.id}:`, error);
-              // Fallback: restituisci il prodotto base senza varianti
-              return {
-                id: prodotto.id,
-                nome: prodotto.name,
-                tipo: prodotto.type,
-                thumbnail_url: prodotto.thumbnail_url,
-                is_ignored: prodotto.is_ignored,
-                sync_variants: []
-              };
-            }
-          })
-      );
-
-      return NextResponse.json({ 
-        success: true, 
-        prodotti: prodottiConVarianti
+    if (response.data?.result) {
+      const products = response.data.result.map((product: { sync_product: { id: number; name: string; thumbnail_url: string } }) => ({
+        id: product.sync_product.id,
+        name: product.sync_product.name,
+        thumbnail: product.sync_product.thumbnail_url
+      }));
+      
+      return NextResponse.json({
+        success: true,
+        products: products
+      });
+    } else {
+      return NextResponse.json({
+        success: false,
+        error: 'Nessun prodotto trovato'
       });
     }
-
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Nessun prodotto trovato' 
-    }, { status: 404 });
-
-  } catch (error: any) {
-    console.error('Errore nel recupero prodotti Printful:', error.response?.data || error.message);
+    
+  } catch (error: unknown) {
+    console.error('Errore nel recupero dei prodotti:', error);
     
     return NextResponse.json({
       success: false,
       error: 'Errore nel recupero dei prodotti',
-      details: error.response?.data?.error || error.message
+      details: (error as { response?: { data?: unknown } })?.response?.data || error
     }, { status: 500 });
   }
 }

@@ -44,7 +44,19 @@ export default function PersonalizzaProdottoPage({
   // Unwrap dei parametri usando React.use()
   const { productId, variantId } = use(params);
   const [prodotto, setProdotto] = useState<ProdottoDettaglio | null>(null);
-  const [variante, setVariante] = useState<VarianteProdotto | null>(null);
+  const [variante, setVariante] = useState<{
+    id: number;
+    name: string;
+    size: string;
+    color: string;
+    price: string;
+    currency: string;
+    in_stock: boolean;
+    catalog_product_id: number;
+    catalog_variant_id: number;
+    image?: string;
+    color_code?: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [immagineFantacalcio, setImmagineFantacalcio] = useState<string | null>(null);
@@ -113,7 +125,17 @@ export default function PersonalizzaProdottoPage({
   }, []);
 
   // Genera l'immagine della formazione dai dati salvati
-  const generaImmagineDaSessione = async (sessionData: any) => {
+  const generaImmagineDaSessione = async (sessionData: {
+    nomeSquadra?: string;
+    dimensioneFontSquadra?: number;
+    giocatoriSelezionati?: Array<{
+      x: number;
+      y: number;
+      nome: string;
+      squadra: string;
+      ruolo: string;
+    }>;
+  }) => {
     try {
       // Usa la stessa logica del componente principale per generare l'immagine
       const canvas = document.createElement('canvas');
@@ -350,7 +372,9 @@ export default function PersonalizzaProdottoPage({
         <div className="bg-white rounded-lg p-8 flex flex-col items-center shadow-2xl max-w-md mx-4">
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Errore</h3>
-          <p className="text-gray-600 text-center mb-4">{error || 'Prodotto non trovato'}</p>
+          <p className="text-gray-600 text-center">
+            Errore nel caricamento del prodotto. Riprova più tardi.
+          </p>
           <Link 
             href="/shop"
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
@@ -481,7 +505,7 @@ export default function PersonalizzaProdottoPage({
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
                   <div className="text-gray-400 text-4xl mb-4">📷</div>
                   <p className="text-gray-600 mb-4">
-                    Carica l'immagine della tua rosa di fantacalcio o usa quella salvata automaticamente
+                    Carica l&apos;immagine della tua rosa di fantacalcio o usa quella salvata automaticamente
                   </p>
                   <input
                     ref={fileInputRef}
@@ -553,7 +577,7 @@ export default function PersonalizzaProdottoPage({
                 onClick={procediAcquisto}
                 className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 px-6 rounded-lg font-bold text-lg hover:from-green-700 hover:to-emerald-700 transition-all transform hover:scale-105"
               >
-                Procedi all'Acquisto - {variante.price} {variante.currency}
+                Procedi all&apos;Acquisto - {variante.price} {variante.currency}
               </button>
             )}
           </div>

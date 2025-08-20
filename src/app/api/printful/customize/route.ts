@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
 
     // Per le tazze, usiamo i catalog_variant_ids invece di variant_ids
     // e una struttura più semplice
-    const selectedVariant = product.sync_variants.find((v: any) => v.id === parseInt(variantId));
+    const selectedVariant = product.sync_variants.find((v: { id: number }) => v.id === parseInt(variantId));
     const catalogVariantId = selectedVariant?.variant_id;
     
     console.log('Variant mapping:', {
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
       
       // La struttura corretta è result.product.files
       if (catalogProductResponse.data?.result?.product?.files) {
-        availablePlacements = catalogProductResponse.data.result.product.files.map((f: any) => f.id);
+        availablePlacements = catalogProductResponse.data.result.product.files.map((f: { id: string }) => f.id);
         console.log('✅ Placement trovati in result.product.files:', availablePlacements);
       } else if (catalogProductResponse.data?.result?.files) {
         availablePlacements = Object.keys(catalogProductResponse.data.result.files);
@@ -197,8 +197,8 @@ export async function POST(request: NextRequest) {
         console.log(`📡 Tentativo con product_id: ${catalogProductId}`);
         mockupV1Response = await printfulApi.post(`/mockup-generator/create-task/${catalogProductId}`, mockupV1Data);
         console.log(`✅ Successo con placement ${correctPlacement}!`);
-      } catch (v1Error: any) {
-        if (v1Error.response?.status === 404) {
+      } catch (v1Error: unknown) {
+        if ((v1Error as { response?: { status: number } })?.response?.status === 404) {
           console.log('📡 Product_id non trovato, provo con endpoint generico /0');
           mockupV1Response = await printfulApi.post('/mockup-generator/create-task/0', mockupV1Data);
           console.log(`✅ Successo con endpoint /0 e placement ${correctPlacement}!`);
@@ -238,7 +238,7 @@ export async function POST(request: NextRequest) {
             
             console.log('🎉 Mockup V1 completato!', {
               numResults: results.length,
-              results: results.map((r: any) => ({ mockup_url: r.mockup_url, variant_id: r.variant_id }))
+              results: results.map((r: { mockup_url: string; variant_id: number }) => ({ mockup_url: r.mockup_url, variant_id: r.variant_id }))
             });
             
             return NextResponse.json({
@@ -248,7 +248,7 @@ export async function POST(request: NextRequest) {
               catalogVariantId: catalogVariantId,
               syncVariantId: variantId,
               message: 'Immagine caricata e mockup generato con successo!',
-              mockups: results.map((result: any) => ({
+              mockups: results.map((result: { placement?: string; mockup_url: string; variant_id: number }) => ({
                 placement: result.placement || 'front',
                 mockup_url: result.mockup_url,
                 variant_id: result.variant_id
@@ -282,8 +282,8 @@ export async function POST(request: NextRequest) {
         });
       }
       
-    } catch (mockupError: any) {
-      console.error('❌ Errore mockup V1:', mockupError.response?.data || mockupError.message);
+    } catch (mockupError: unknown) {
+      console.error('❌ Errore mockup V1:', (mockupError as { response?: { data?: unknown } })?.response?.data || mockupError);
       
       // Se il mockup fallisce, restituiamo comunque il file ID
       return NextResponse.json({
@@ -296,17 +296,17 @@ export async function POST(request: NextRequest) {
         mockups: [],
         previewUrl: uploadResponse.data?.result?.preview_url,
         thumbnailUrl: uploadResponse.data?.result?.thumbnail_url,
-        mockupError: mockupError.response?.data?.error || mockupError.message
+        mockupError: (mockupError as { response?: { data?: { error?: unknown } } })?.response?.data?.error || mockupError
       });
     }
 
-  } catch (error: any) {
-    console.error('Errore nella personalizzazione:', error.response?.data || error.message);
+  } catch (error: unknown) {
+    console.error('Errore nella personalizzazione:', (error as { response?: { data?: unknown } })?.response?.data || error);
     
     return NextResponse.json({
       success: false,
       error: 'Errore nella personalizzazione del prodotto',
-      details: error.response?.data?.error || error.message
-    }, { status: 500 });
+      details: (error as { response?: { data?: { error?: unknown } } })?.response?.data?.error || error
+      }, { status: 500 });
   }
 }

@@ -1005,9 +1005,21 @@ export default function Home() {
       {/* Contenuto principale - nascosto durante caricamento sessione */}
       {!loadingSessione && (
         <>
-          <h1 className={`text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-center text-white mt-6 mb-6 transform -rotate-2 ${leckerliOne.className}`} style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
-            Fantacover.it
-          </h1>
+          <div className="flex justify-between items-center w-full px-4 mb-6">
+            <div></div> {/* Spazio vuoto a sinistra */}
+            <h1 className={`text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-center text-white transform -rotate-2 ${leckerliOne.className}`} style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
+              Fantacover.it
+            </h1>
+            <button
+              onClick={() => {
+                document.cookie = 'auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                window.location.href = '/login';
+              }}
+              className="px-3 py-2 text-sm font-medium text-white hover:text-red-200 hover:bg-red-600 bg-red-500 rounded-md transition-colors"
+            >
+              🔓 Logout
+            </button>
+          </div>
 
       {/* Color Picker per sfondo - temporaneamente nascosto */}
       {false && (
@@ -1045,6 +1057,16 @@ export default function Home() {
         <span className="text-white text-lg font-semibold">
           Giocatori selezionati: {giocatoriSelezionati.length}/25
         </span>
+      </div>
+
+      {/* Link al shop */}
+      <div className="text-center mb-4">
+        <a
+          href="/shop"
+          className="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+        >
+          🛍️ Vai allo Shop
+        </a>
       </div>
 
       {/* Editor nome squadra */}

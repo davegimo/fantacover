@@ -1059,15 +1059,7 @@ export default function Home() {
         </span>
       </div>
 
-      {/* Link al shop */}
-      <div className="text-center mb-4">
-        <a
-          href="/shop"
-          className="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
-        >
-          🛍️ Vai allo Shop
-        </a>
-      </div>
+
 
       {/* Editor nome squadra */}
       <div className="flex justify-center mb-6">
@@ -1398,6 +1390,15 @@ export default function Home() {
             <p className="text-sm">Caricamento statistiche...</p>
           </div>
         )}
+      </div>
+
+      {/* Nota informativa */}
+      <div className="text-center mt-6 mb-4 px-4">
+        <div className="bg-blue-900 bg-opacity-20 border border-blue-400 rounded-lg p-4 max-w-2xl mx-auto">
+          <p className="text-blue-100 text-sm leading-relaxed">
+            Nota: Le immagini dei giocatori utilizzate in questa applicazione sono di proprietà dei rispettivi club e/o agenzie fotografiche. Fantacover.it non rivendica alcun diritto su queste immagini e le utilizza esclusivamente a scopo dimostrativo per la creazione di formazioni fantacalcio personalizzate. Per qualsiasi uso commerciale o distribuzione delle immagini, è necessario contattare i legittimi proprietari dei diritti.
+          </p>
+        </div>
       </div>
 
       {/* Modal per selezione giocatori */}

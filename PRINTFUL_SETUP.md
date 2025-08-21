@@ -122,3 +122,4 @@ Per problemi con l'integrazione Printful:
 1. Consulta la [documentazione ufficiale Printful API](https://developers.printful.com/)
 2. Verifica lo stato dei servizi Printful
 3. Controlla i log dell'applicazione per errori specifici
+

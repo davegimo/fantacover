@@ -15,8 +15,13 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
   
-  // Altrimenti, reindirizza alla pagina di login
-  return NextResponse.redirect(new URL('/login', request.url));
+  // Se sta accedendo alla pagina admin, richiedi autenticazione
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+  
+  // Per tutte le altre pagine (inclusa la pagina principale), lascia passare
+  return NextResponse.next();
 }
 
 export const config = {

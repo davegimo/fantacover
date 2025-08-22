@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.56.0",
     "@types/xlsx": "^0.0.35",
     "@vercel/analytics": "^1.5.0",
     "axios": "^1.11.0",

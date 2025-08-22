@@ -184,7 +184,7 @@ export default function PersonalizzaProdottoPage({
         });
       }
 
-      // Disegna la scritta fantacover.it
+      // Disegna la scritta FantaCover.it
       ctx.fillStyle = 'white';
       ctx.font = `bold 69px "Leckerli One", cursive`;
       ctx.textAlign = 'center';
@@ -195,8 +195,8 @@ export default function PersonalizzaProdottoPage({
       ctx.save();
       ctx.translate(540, 1860);
       ctx.rotate(-2 * Math.PI / 180);
-      ctx.strokeText('Fantacover.it', 0, 0);
-      ctx.fillText('Fantacover.it', 0, 0);
+      ctx.strokeText('FantaCover.it', 0, 0);
+      ctx.fillText('FantaCover.it', 0, 0);
       ctx.restore();
 
       // Disegna i giocatori (versione semplificata)

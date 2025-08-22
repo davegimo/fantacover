@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { Leckerli_One, Roboto, Oswald, Bebas_Neue, Fredoka, Righteous } from 'next/font/google';
+import { registerUserVisit, isFirstVisit } from '@/utils/userTracking';
+import { trackDownload, trackShare } from '@/utils/downloadTracking';
 
 // Interfaccia per i giocatori dall'Excel
 interface GiocatoreExcel {
@@ -104,6 +106,7 @@ export default function Home() {
   const [giocatoriSelezionati, setGiocatoriSelezionati] = useState<GiocatoreSelezionato[]>([]);
   const [canvasScale, setCanvasScale] = useState(0.6);
   const [modalAperto, setModalAperto] = useState(false);
+  const [modalSvuotaAperto, setModalSvuotaAperto] = useState(false);
   const [ruoloSelezionato, setRuoloSelezionato] = useState<Ruolo | null>(null);
   const [posizioneSelezionata, setPosizioneSelezionata] = useState<{x: number, y: number} | null>(null);
   const [squadraSelezionata, setSquadraSelezionata] = useState<string | null>(null);
@@ -119,6 +122,12 @@ export default function Home() {
   const [loadingSessione, setLoadingSessione] = useState(true);
   const [statisticheFoto, setStatisticheFoto] = useState<{conFoto: number, totale: number} | null>(null);
   const [loadingDownload, setLoadingDownload] = useState(false);
+  const [visitorStats, setVisitorStats] = useState<{
+    uniqueVisitors: number;
+    totalShares: number;
+  } | null>(null);
+  const [animatedVisitors, setAnimatedVisitors] = useState(0);
+  const [animatedShares, setAnimatedShares] = useState(0);
   const [preloadedCanvas, setPreloadedCanvas] = useState<HTMLCanvasElement | null>(null);
   const [isPreloading, setIsPreloading] = useState(false);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -415,6 +424,13 @@ export default function Home() {
     // La sessione verrà salvata automaticamente dal useEffect
   };
 
+  const svuotaRosa = () => {
+    setGiocatoriSelezionati([]);
+    setGiocatorePreDelete(null);
+    setModalSvuotaAperto(false);
+    // La sessione verrà salvata automaticamente dal useEffect
+  };
+
   const attivaPreDelete = (id: string, event: React.MouseEvent) => {
     event.stopPropagation();
     setGiocatorePreDelete(id);
@@ -608,6 +624,27 @@ export default function Home() {
     caricaDatiExcel();
   }, []);
 
+  // Registra la visita dell'utente al primo accesso
+  useEffect(() => {
+    const registraVisita = async () => {
+      try {
+        const result = await registerUserVisit();
+        if (result.success) {
+          console.log('Visita registrata:', result.isNewUser ? 'Nuovo utente' : 'Utente esistente');
+        } else {
+          console.error('Errore nella registrazione visita:', result.error);
+        }
+      } catch (error) {
+        console.error('Errore nella registrazione visita:', error);
+      }
+    };
+
+    // Registra solo se è il primo accesso o se non c'è localStorage
+    if (typeof window !== 'undefined' && isFirstVisit()) {
+      registraVisita();
+    }
+  }, []);
+
   // Salva automaticamente la sessione quando cambiano i dati
   useEffect(() => {
     salvaSessione();
@@ -650,7 +687,71 @@ export default function Home() {
     }
   };
 
+  // Carica le statistiche dei visitatori
+  useEffect(() => {
+    const caricaStatisticheVisitori = async () => {
+      try {
+        const response = await fetch('/api/visitor-stats');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setVisitorStats(data.stats);
+          }
+        }
+      } catch (error) {
+        console.error('Errore nel caricamento statistiche visitatori:', error);
+      }
+    };
 
+    caricaStatisticheVisitori();
+  }, []);
+
+  // Animazione del contatore
+  useEffect(() => {
+    if (visitorStats) {
+      // Animazione visitatori
+      const animateVisitors = () => {
+        const target = visitorStats.uniqueVisitors;
+        const duration = 800; // 800ms
+        const steps = 60; // 60 frame
+        const increment = target / steps;
+        let current = 0;
+        
+        const timer = setInterval(() => {
+          current += increment;
+          if (current >= target) {
+            current = target;
+            clearInterval(timer);
+          }
+          setAnimatedVisitors(Math.floor(current));
+        }, duration / steps);
+      };
+
+      // Animazione condivisioni
+      const animateShares = () => {
+        const target = visitorStats.totalShares;
+        const duration = 800; // 800ms
+        const steps = 60; // 60 frame
+        const increment = target / steps;
+        let current = 0;
+        
+        const timer = setInterval(() => {
+          current += increment;
+          if (current >= target) {
+            current = target;
+            clearInterval(timer);
+          }
+          setAnimatedShares(Math.floor(current));
+        }, duration / steps);
+      };
+
+      // Avvia le animazioni con un piccolo delay per renderle più fluide
+      setTimeout(() => {
+        animateVisitors();
+        animateShares();
+      }, 100);
+    }
+  }, [visitorStats]);
 
   // Funzione di precaricamento ottimizzata per iPhone
   const preloadImmagine = async () => {
@@ -727,7 +828,7 @@ export default function Home() {
         });
       }
 
-      // Disegna la scritta fantacover.it centrata
+      // Disegna la scritta FantaCover.it centrata
       ctx.fillStyle = 'white';
       ctx.font = `bold 69px "Leckerli One", cursive`; // Aumentato del 15% (60 * 1.15 = 69)
       ctx.textAlign = 'center';
@@ -741,8 +842,8 @@ export default function Home() {
       ctx.rotate(-2 * Math.PI / 180); // Rotazione di -2 gradi
       
       // Disegna il contorno e il testo
-      ctx.strokeText('Fantacover.it', 0, 0);
-      ctx.fillText('Fantacover.it', 0, 0);
+      ctx.strokeText('FantaCover.it', 0, 0);
+      ctx.fillText('FantaCover.it', 0, 0);
       
       // Ripristina il contesto
       ctx.restore();
@@ -894,7 +995,7 @@ export default function Home() {
       
       if (canvas) {
         // Scarica l'immagine
-        canvas.toBlob((blob) => {
+        canvas.toBlob(async (blob) => {
           if (blob) {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -904,6 +1005,23 @@ export default function Home() {
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
+            
+            // Traccia il download
+            try {
+              await trackDownload({
+                fileFormat: 'png',
+                fileSize: blob.size,
+                imageDimensions: '1080x1920',
+                metadata: {
+                  title: nomeSquadra || 'Formazione FantaCover',
+                  giocatori: giocatoriSelezionati.length,
+                  squadra: nomeSquadra,
+                  timestamp: new Date().toISOString()
+                }
+              });
+            } catch (trackingError) {
+              console.error('Errore nel tracking del download:', trackingError);
+            }
           }
           setLoadingDownload(false);
         }, 'image/png');
@@ -941,6 +1059,25 @@ export default function Home() {
                   text: 'Guarda la mia formazione creata con Fantacover! 🏆⚽',
                   files: [file]
                 });
+                
+                // Traccia la condivisione Web Share API
+                try {
+                  await trackShare({
+                    platform: 'web_share',
+                    method: 'api',
+                    fileFormat: 'png',
+                    fileSize: blob.size,
+                    imageDimensions: '1080x1920',
+                    metadata: {
+                      title: nomeSquadra || 'Formazione FantaCover',
+                      giocatori: giocatoriSelezionati.length,
+                      squadra: nomeSquadra,
+                      timestamp: new Date().toISOString()
+                    }
+                  });
+                } catch (trackingError) {
+                  console.error('Errore nel tracking della condivisione:', trackingError);
+                }
               } catch (error) {
                 // L'utente ha annullato la condivisione o c'è stato un errore
                 console.log('Condivisione annullata o errore:', error);
@@ -1005,20 +1142,10 @@ export default function Home() {
       {/* Contenuto principale - nascosto durante caricamento sessione */}
       {!loadingSessione && (
         <>
-          <div className="flex justify-between items-center w-full px-4 mb-6">
-            <div></div> {/* Spazio vuoto a sinistra */}
-            <h1 className={`text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-center text-white transform -rotate-2 ${leckerliOne.className}`} style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
-              Fantacover.it
+          <div className="flex justify-center items-center w-full px-4 mb-6">
+            <h1 className={`text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-bold text-center text-white transform -rotate-2 ${leckerliOne.className}`} style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.3)' }}>
+              FantaCover.it
             </h1>
-            <button
-              onClick={() => {
-                document.cookie = 'auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-                window.location.href = '/login';
-              }}
-              className="px-3 py-2 text-sm font-medium text-white hover:text-red-200 hover:bg-red-600 bg-red-500 rounded-md transition-colors"
-            >
-              🔓 Logout
-            </button>
           </div>
 
       {/* Color Picker per sfondo - temporaneamente nascosto */}
@@ -1202,6 +1329,29 @@ export default function Home() {
         </div>
       )}
       
+      {/* Bottone Svuota sopra il canvas */}
+      {giocatoriSelezionati.length > 0 && (
+        <div className="flex justify-center mb-4">
+          <button
+            onClick={() => setModalSvuotaAperto(true)}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            Svuota Rosa
+          </button>
+        </div>
+      )}
+
+      {/* Messaggio per invio foto mancanti */}
+      <div className="text-center mb-4 px-4">
+        <p className="text-white text-sm leading-relaxed font-bold">
+          Non trovi un tuo giocatore e vuoi inviarci la foto?<br />
+          Scrivici in DM su Instagram o TikTok e aggiorneremo subito!
+        </p>
+      </div>
+
       {/* Canvas dell'immagine - Sempre centrato */}
       <div className="flex justify-center">
         <div 
@@ -1241,7 +1391,7 @@ export default function Home() {
             </div>
           )}
 
-          {/* Scritta fantacover.it centrata */}
+          {/* Scritta FantaCover.it centrata */}
           <div
             className={`absolute text-white font-bold transform -rotate-2 ${leckerliOne.className}`}
             style={{
@@ -1253,7 +1403,7 @@ export default function Home() {
               transform: `translateX(-50%) rotate(-2deg)` // Centra il testo
             }}
           >
-            Fantacover.it
+            FantaCover.it
           </div>
 
           {/* Posizioni disponibili e giocatori */}
@@ -1392,6 +1542,59 @@ export default function Home() {
         )}
       </div>
 
+
+
+              {/* Statistiche visitatori e condivisioni */}
+              <div className="text-center mt-6 mb-4">
+                <div className="flex justify-center gap-8 text-white">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-400 transition-all duration-200">
+                      {visitorStats ? animatedVisitors.toLocaleString() : '...'}
+                    </div>
+                    <div className="text-sm text-gray-300">
+                      Visitatori Unici
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-400 transition-all duration-200">
+                      {visitorStats ? animatedShares.toLocaleString() : '...'}
+                    </div>
+                    <div className="text-sm text-gray-300">
+                      Condivisioni Totali
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottoni social */}
+        <div className="text-center mt-4 mb-2">
+          <div className="flex justify-center gap-4">
+            <a
+              href="https://instagram.com/fantacover.it"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+              title="@fantacover.it"
+            >
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+              </svg>
+            </a>
+            
+            <a
+              href="https://tiktok.com/@fantacover"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center w-10 h-10 bg-black hover:bg-gray-800 text-white rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+              title="@fantacover"
+            >
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+
       {/* Nota informativa */}
       <div className="text-center mt-6 mb-4 px-4">
         <div className="bg-blue-900 bg-opacity-20 border border-blue-400 rounded-lg p-4 max-w-2xl mx-auto">
@@ -1404,7 +1607,7 @@ export default function Home() {
       {/* Modal per selezione giocatori */}
       {modalAperto && ruoloSelezionato && (
         <div 
-          className="fixed inset-0 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 flex items-center justify-center z-[100] p-4"
           onClick={() => {
             setModalAperto(false);
             setSquadraSelezionata(null);
@@ -1506,6 +1709,50 @@ export default function Home() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal di conferma per svuotare la rosa */}
+      {modalSvuotaAperto && (
+        <div 
+          className="fixed inset-0 flex items-center justify-center z-[100] p-4"
+          onClick={() => setModalSvuotaAperto(false)}
+        >
+          <div 
+            className="bg-gray-900 border border-gray-600 rounded-lg p-6 max-w-md w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-white">
+                Conferma Svuotamento
+              </h3>
+              <button
+                onClick={() => setModalSvuotaAperto(false)}
+                className="text-gray-300 hover:text-white text-xl"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <p className="text-gray-300 mb-6">
+              Sei sicuro di voler svuotare la tua rosa? Questa azione non può essere annullata.
+            </p>
+            
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setModalSvuotaAperto(false)}
+                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors"
+              >
+                Annulla
+              </button>
+              <button
+                onClick={svuotaRosa}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors"
+              >
+                Svuota Rosa
+              </button>
+            </div>
           </div>
         </div>
       )}

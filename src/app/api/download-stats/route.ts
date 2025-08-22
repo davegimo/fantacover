@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -52,8 +52,17 @@ export async function GET(request: NextRequest) {
         mobile: 0,
         tablet: 0
       },
-      byAction: {},
-      recentActivity: []
+      byAction: {} as Record<string, number>,
+      recentActivity: [] as Array<{
+        id: string;
+        user_id: string;
+        action_type: string;
+        device_type: string;
+        file_format: string;
+        image_dimensions: string;
+        created_at: string;
+        metadata: Record<string, unknown>;
+      }>
     };
 
     // Analizza i dati

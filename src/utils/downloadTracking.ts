@@ -60,7 +60,7 @@ export async function trackDownload(options: {
   fileFormat?: string;
   fileSize?: number;
   imageDimensions?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const userData = {
@@ -102,7 +102,7 @@ export async function trackShare(options: {
   fileFormat?: string;
   fileSize?: number;
   imageDimensions?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }): Promise<{ success: boolean; error?: string }> {
   try {
     const userData = {
@@ -151,7 +151,7 @@ export async function shareViaWebAPI(data: {
   }
 
   try {
-    const shareData: any = {
+    const shareData: Record<string, unknown> = {
       title: data.title,
       text: data.text,
     };

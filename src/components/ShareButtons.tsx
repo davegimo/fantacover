@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { 
   trackDownload, 
-  trackShare, 
   shareViaWebAPI, 
   shareViaWhatsApp, 
   shareViaInstagram, 
@@ -63,7 +62,11 @@ export default function ShareButtons({
   const handleWebShare = async () => {
     setIsSharing(true);
     try {
-      const shareData: any = {
+      const shareData: {
+        title: string;
+        text: string;
+        files?: File[];
+      } = {
         title,
         text
       };

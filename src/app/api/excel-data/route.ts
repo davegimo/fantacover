@@ -7,6 +7,7 @@ export interface GiocatoreExcel {
   ruolo: string;
   cognome: string;
   squadra: string;
+  hasFoto: boolean;
 }
 
 export async function GET() {
@@ -42,10 +43,25 @@ export async function GET() {
         
         // Verifica che i dati non siano vuoti
         if (ruolo && cognome && squadra) {
+          const cognomePulito = cognome.toString().trim().replace(/\./g, ''); // Rimuovi tutti i punti dal cognome
+          const squadraPulita = squadra.toString().trim();
+          
+          // Verifica se esiste l'immagine del giocatore
+          const imagePath = path.join(process.cwd(), 'public', 'giocatori2', squadraPulita, `${cognomePulito}.webp`);
+          let hasFoto = false;
+          
+          try {
+            await fs.access(imagePath);
+            hasFoto = true;
+          } catch {
+            hasFoto = false;
+          }
+          
           giocatori.push({
             ruolo: ruolo.toString().trim(),
-            cognome: cognome.toString().trim().replace(/\./g, ''), // Rimuovi tutti i punti dal cognome
-            squadra: squadra.toString().trim()
+            cognome: cognomePulito,
+            squadra: squadraPulita,
+            hasFoto
           });
         }
       }

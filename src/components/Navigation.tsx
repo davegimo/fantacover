@@ -47,6 +47,17 @@ export default function Navigation() {
               >
                 🛍️ Shop
               </Link>
+              
+              <Link
+                href="/indovina"
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  pathname.startsWith('/indovina')
+                    ? 'bg-green-100 text-green-700' 
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                🎮 Indovina
+              </Link>
             </div>
           </div>
           

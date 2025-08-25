@@ -1,15 +1,14 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import Navigation from '@/components/Navigation';
 
 // Interfaccia per i giocatori
 interface Giocatore {
-  nome: string;
+  cognome: string;
   squadra: string;
   ruolo: string;
-  immagine: string;
+  hasFoto: boolean;
 }
 
 export default function IndovinaPage() {
@@ -25,7 +24,6 @@ export default function IndovinaPage() {
   const [vittorie, setVittorie] = useState(0);
   const [partite, setPartite] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const router = useRouter();
 
   const PASSWORD_CORRETTA = 'fantacover2024';
 
@@ -37,8 +35,7 @@ export default function IndovinaPage() {
         const data = await response.json();
         
         // Filtra solo i giocatori con foto
-        const giocatoriConFoto = data.filter((giocatore: any) => {
-          const nomeFile = giocatore.cognome.replace(/\s+/g, '').toLowerCase();
+        const giocatoriConFoto = data.filter((giocatore: { cognome: string; hasFoto: boolean }) => {
           return giocatore.hasFoto;
         });
 
@@ -226,7 +223,7 @@ export default function IndovinaPage() {
               </div>
             ) : (
               <div className="w-300 h-400 bg-white/20 rounded-lg flex items-center justify-center">
-                <p className="text-white/60">Clicca "Nuova Partita" per iniziare</p>
+                <p className="text-white/60">Clicca &quot;Nuova Partita&quot; per iniziare</p>
               </div>
             )}
           </div>
